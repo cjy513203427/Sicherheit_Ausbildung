@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="resource">
+<!-- ====================================== sql======================================= -->
+	<!-- 获取用户下的表 sql 语句 -->
+	<sqltemplate id="queryResourceListByUserIdAndType">
+		<![CDATA[
+			 SELECT
+			 	DISTINCT
+				RE.ID,
+				RE.NAME text,
+				RE.TYPE,
+				RE.ICON iconCls,
+				RE.PARENT_ID,
+				RE.PERMISSION,
+				RE.URL,
+				RE.STATUS,
+				RE.CREATE_TIME,
+				RE.UPDATE_TIME
+			FROM CT_RESOURCE  RE
+					INNER JOIN  CT_ROLE_RESOURCE_RELATION  RR ON RE.ID = RR.RESOURCE_ID
+					INNER JOIN  CT_USER_ROLE_RELATION UR ON UR.ROLE_ID = RR.ROLE_ID
+					WHERE   RE.TYPE = :type  and ur.user_id = :userId
+		]]>
+	</sqltemplate>
+
+	<sqltemplate id="selectMenuResource">
+		<![CDATA[
+			 SELECT
+			 	r.id,
+			 	r.name text,
+			 	r.type,
+			 	r.icon iconCls,
+			 	r.parent_id parentId,
+			 	r.permission,
+			 	r.url,
+			 	r.status
+        	 FROM ct_resource r WHERE r.type='menu'
+		]]>
+	</sqltemplate>
+
+	<sqltemplate id="selectButtonResource">
+		<![CDATA[
+			 SELECT
+			 	r.id,
+			 	r.name text,
+			 	r.type,
+			 	r.icon iconCls,
+			 	r.parent_id parentId,
+			 	r.permission,
+			 	r.status
+        	 FROM ct_resource r WHERE
+        	 r.parent_id = :id
+        	 AND r.type='button'
+		]]>
+	</sqltemplate>
+
+	<sqltemplate id="insertResource">
+		<![CDATA[
+			 INSERT INTO ct_resource
+        		SET
+				<#if type?? && type != '' >
+					type = :type ,
+				</#if>
+				<#if iconCls?? && iconCls != '' >
+					icon = :iconCls ,
+				</#if>
+				<#if parentId?? && parentId != '' >
+					parent_id = :parentId ,
+				</#if>
+				<#if permission?? && permission != '' >
+					permission = :permission ,
+				</#if>
+				<#if url?? && url != '' >
+					url = :url ,
+				</#if>
+				<#if status?? && status != '' >
+					status = :status ,
+				</#if>
+				name =:text
+		]]>
+	</sqltemplate>
+
+	<sqltemplate id="selectResource">
+		<![CDATA[
+			SELECT
+				id,
+				name text,
+				type,
+				parent_id parentId,
+				permission
+				FROM ct_resource
+				WHERE status=1
+		]]>
+	</sqltemplate>
+
+	<sqltemplate id="selectResourceByRole">
+		<![CDATA[
+			SELECT
+			r.id,
+			r.name text,
+			r.type,
+			r.icon iconCls,
+			r.parent_id parentId,
+			r.permission
+			FROM ct_role_resource_relation rr
+			LEFT JOIN ct_resource r on r.id = rr.resource_id
+			WHERE rr.role_id = :id
+		]]>
+	</sqltemplate>
+
+	<sqltemplate id="updateResource">
+		<![CDATA[
+			update ct_resource set
+			<#if type?? && type != '' >
+					type = :type ,
+			</#if>
+			<#if text?? && text != '' >
+					name = :text ,
+			</#if>
+			<#if iconCls?? && iconCls != '' >
+				icon = :iconCls ,
+			</#if>
+			<#if parentId?? && parentId != '' >
+				parent_id = :parentId ,
+			</#if>
+			<#if permission?? && permission != '' >
+				permission = :permission ,
+			</#if>
+			<#if url?? && url != '' >
+				url = :url ,
+			</#if>
+			<#if status?? && status != '' >
+				status = :status ,
+			</#if>
+			update_time = current_timestamp
+			WHERE ID = :id
+		]]>
+	</sqltemplate>
+
+	<sqltemplate id="deleteResource">
+		<![CDATA[
+			delete from ct_resource
+			WHERE ID = :resourceId
+		]]>
+	</sqltemplate>
+
+</sqls>

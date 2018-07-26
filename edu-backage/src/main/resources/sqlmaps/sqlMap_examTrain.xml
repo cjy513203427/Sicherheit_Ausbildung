@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="examTrain">
+    <!-- ====================================== sql======================================= -->
+
+
+    <sqltemplate id="queryTrainExamByProgramId">
+        <![CDATA[
+                SELECT 	id,
+                    train_program_id,
+                    total_score,
+                    pass_score,
+                    question_number,
+                    create_time,
+                    update_time
+
+                FROM  EDU_EXAM_TRAIN
+                WHERE train_program_id = :programId
+		]]>
+    </sqltemplate>
+
+
+    <sqltemplate id="queryLabourInExamExsit">
+        <![CDATA[
+
+                SELECT
+                  COUNT(id)
+                FROM EDU_EXAMLABOUR_REL
+                WHERE exam_id = :examId
+                AND labourer_id IN
+                ( -1,
+                    <#list labourIds as item>
+                         ${item}
+                     <#if item_has_next>,</#if>
+                     </#list>
+                )
+
+		]]>
+    </sqltemplate>
+
+
+    <sqltemplate id="queryQuestionIdListByExamId">
+        <![CDATA[
+
+                SELECT
+                    QUESTION_ID
+                FROM  EDU_EXAM_QUESTION_REL
+                WHERE EXAM_TYPE = :examType
+                AND EXAM_ID = :examId
+                ORDER BY QUESTION_ID
+
+		]]>
+    </sqltemplate>
+
+</sqls>

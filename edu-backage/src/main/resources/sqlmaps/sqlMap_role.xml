@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="role">
+<!-- ====================================== sql======================================= -->
+	<!-- 获取用户下的表 sql 语句 -->
+	<sqltemplate id="queryRoleListByUserId">
+		<![CDATA[
+			 SELECT
+				RO.ID,
+				RO.NAME,
+				RO.DESCRIPTION,
+				RO.STATUS,
+				RO.CREATE_TIME,
+				RO.UPDATE_TIME
+			FROM CT_ROLE RO
+			INNER JOIN CT_USER_ROLE_RELATION  UR ON UR.ROLE_ID = RO.ID
+			WHERE UR.USER_ID = :userId
+		]]>
+	</sqltemplate>
+
+	<!--获取角色总数-->
+	<sqltemplate id="countRole">
+		<![CDATA[
+			 SELECT COUNT(id) FROM ct_role
+		]]>
+	</sqltemplate>
+
+	<sqltemplate id="selectSingleRole">
+		<![CDATA[
+			 SELECT count(id) FROM ct_role r WHERE name = :name LIMIT 1
+		]]>
+	</sqltemplate>
+
+	<!--根据角色ID查询用户-->
+	<sqltemplate id="queryUsersByRoleId">
+		<![CDATA[
+			SELECT
+				u.id,
+				u.realname
+			FROM
+				ct_user u
+			INNER JOIN ct_user_role_relation rr ON u.id = rr.user_id
+			INNER JOIN ct_role cr ON rr.role_id = cr.id
+			AND rr.role_id = :roleId
+			AND cr.`status` = 1
+			AND u.`status` = 1
+		]]>
+	</sqltemplate>
+
+
+	<sqltemplate id="deleteRoleUserByUseId">
+		<![CDATA[
+			DELETE
+			FROM
+				ct_user_role_relation
+			WHERE
+				role_id = :roleId
+			AND user_id IN (${userId})
+		]]>
+	</sqltemplate>
+
+	<sqltemplate id="updateRole">
+		<![CDATA[
+			 UPDATE ct_role SET
+				<#if name?? && name != '' >
+					name = :name ,
+				</#if>
+				<#if description?? && description != '' >
+					description = :description ,
+				</#if>
+				<#if status?? && status != '' >
+					status = :status ,
+				</#if>
+				update_time = current_timestamp
+				WHERE  id=:id
+		]]>
+	</sqltemplate>
+
+	<sqltemplate id="selectAllRole">
+		<![CDATA[
+			 SELECT
+			 	id,
+			 	name,
+			 	description,
+			 	status,
+			 	DATE_FORMAT(CREATE_TIME,'%Y-%m-%d %H:%i:%s')   createTime,
+				DATE_FORMAT(UPDATE_TIME,'%Y-%m-%d %H:%i:%s')   updateTime
+			 	FROM ct_role r WHERE r.status = 1
+			 	LIMIT :pageOffset , :pageSize
+		]]>
+	</sqltemplate>
+
+	<sqltemplate id="deleteRoleResource">
+		<![CDATA[
+			 DELETE FROM ct_role_resource_relation WHERE role_id =:id
+		]]>
+	</sqltemplate>
+
+	<!--分配角色权限-->
+	<sqltemplate id="insertRoleResource">
+		<![CDATA[
+			 INSERT INTO ct_role_resource_relation (role_id,resource_id) VALUES
+			 <#list roleResourceList as roleResource>
+				(
+					'${roleResource.roleId}',
+					'${roleResource.resourceId}'
+				)
+				<#if roleResource_has_next>,</#if>
+				</#list>
+		]]>
+	</sqltemplate>
+
+	<!--创建角色-->
+	<sqltemplate id="createRole">
+		<![CDATA[
+		INSERT INTO ct_role SET
+           name= :name,
+         <#if description?? && description != '' >
+		   description = :description ,
+		</#if>
+           status =:status
+		]]>
+	</sqltemplate>
+
+	<!--更改角色状态-->
+	<sqltemplate id="updateRoleStatus">
+		<![CDATA[
+		UPDATE CT_ROLE SET
+		STATUS = :state
+		WHERE ID IN (${roleIds})
+		]]>
+	</sqltemplate>
+
+</sqls>

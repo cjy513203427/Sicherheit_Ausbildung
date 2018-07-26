@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="notice">
+    <!-- ====================================== sql======================================= -->
+    <!--新增通知-->
+    <sqltemplate id="addNotice">
+        <![CDATA[
+           INSERT INTO edu_notice (
+                    notice_type,
+                    reference_id,
+                    notice_content,
+                    labour_id
+                )
+                VALUES
+                <#list eduNotices as eduNotice>
+				(
+					'${eduNotice.noticeType}',
+					'${eduNotice.referenceId}',
+					'${eduNotice.noticeContent}',
+					'${eduNotice.labourId}'
+				)
+			    <#if eduNotice_has_next>,</#if>
+		    </#list>
+		]]>
+    </sqltemplate>
+
+    <!--根据labourId查询通知列表-->
+    <sqltemplate id="allNoticeToLabour">
+        <![CDATA[
+           SELECT
+                id,
+                notice_type,
+                notice_content,
+                reference_id,
+                `status`,
+                labour_id,
+                DATE_FORMAT(CREATE_TIME,'%Y-%m-%d %H:%i:%s') createTime
+            FROM
+                edu_notice
+            WHERE labour_id = :labourerId
+		]]>
+    </sqltemplate>
+
+    <!--删除通知-->
+    <sqltemplate id="deleteNotice">
+        <![CDATA[
+            delete
+            FROM
+                edu_notice
+            WHERE id = :id and labour_id = :labourId
+		]]>
+    </sqltemplate>
+
+    <!--根据外键和通知类型删除通知-->
+    <sqltemplate id="deleteNoticeByMaterialId">
+        <![CDATA[
+            delete
+            FROM
+                edu_notice
+            WHERE notice_type = :noticeType and reference_id in (${ids})
+            <#if limit?? && limit != '' >
+				limit :limit
+			 </#if>
+		]]>
+    </sqltemplate>
+
+    <!--更新通知状态为已读-->
+    <sqltemplate id="readNoticeByNoticeId">
+        <![CDATA[
+            update
+                edu_notice
+            set status = 2
+            WHERE id = :id and labour_id = :labourId
+		]]>
+    </sqltemplate>
+
+</sqls>

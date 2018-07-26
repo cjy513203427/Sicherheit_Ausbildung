@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="buildAttachment">
+    <!--添加单位附件-->
+    <sqlTemplate id="addBuildSiteAttachment">
+        <![CDATA[
+        INSERT build_attachment SET
+        foreign_id = :foreignId,
+        attachment_name = :attachmentName,
+        attachment_path = :attachmentPath,
+        source = 2
+        ]]>
+    </sqlTemplate>
+
+    <!--添加工人附件，新增学员其他信息-->
+    <sqlTemplate id="addBuildLabourerAttachment">
+        <![CDATA[
+        INSERT build_attachment SET
+        <#if foreignId?? && foreignId != '' >
+            foreign_id = :foreignId,
+        </#if>
+        <#if attachmentName?? && attachmentName != '' >
+        attachment_name = :attachmentName,
+        </#if>
+        <#if attachmentPath?? && attachmentPath != '' >
+        attachment_path = :attachmentPath,
+        </#if>
+        <#if attachmentType?? && attachmentType != '' >
+            attachment_type = :attachmentType,
+        </#if>
+        <#if attachmentCode?? && attachmentCode != '' >
+            attachment_code = :attachmentCode,
+        </#if>
+        source = 1
+        ]]>
+    </sqlTemplate>
+</sqls>

@@ -1,0 +1,77 @@
+<!DOCTYPE HTML>
+<html manifest="cache.appcache">
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta charset="UTF-8">
+
+    <title>云艺化安全培训后台管理系统</title>
+
+    <script type="text/javascript">
+        function HtmlFilter(html){
+            html = html.replace(/&lt;script?.*\/script&gt;/, ' ');
+            html = html.replace(/&lt;style.*?\/style[\s]*&gt;/ig, ' ');
+            html = html.replace(/&lt;iframe.*?\/iframe[\s]*&gt;/ig, ' ');
+            html = html.replace(/&lt;[\/]?div.*?&gt;/ig, ' ');
+            html = html.replace(/&lt;[\/]?form.*?&gt;/ig, ' ');
+            html = html.replace(/&lt;!--?.*--&gt;/,' ');		//过滤注释
+            html = html.replace(/&lt;br(\s\/)?&gt;/i,'[br]');
+            html = html.replace(/(\[br\]\s*){10,}/i,'[br]');
+            html = html.replace(/[\s]+on[\w]+[\s]*=[\s]*(?:\'[^\']*\'|\"[^\"]*\"|[^\s]*)/ig, ' ') ;
+            html = html.replace(/[\s]+([\w]+)[\s]*=[\s]*(?:\'[\s]*javascript.*?\'|\"[\s]*javascript.*?\"|[\s]*javascript.*?[\s]*)/ig, ' $1=""');
+            html = html.replace(/&lt;a (.*?)&gt;/ig, '<a $1 target="_blank">');
+            html = html.replace(/&lt;\%|\%&gt;/,''); //过滤动态代码
+            html = html.replace(/&lt;(hr|img|input|area|isindex)( [^&gt;&lt;\[\]]*)&gt;/i,'[\1\2]');
+            //过滤多余html
+            html = html.replace(/&lt;\/?(html|head|meta|link|base|body|title|style|script|form|iframe|frame|frameset)[^&gt;&lt;]*&gt;/i,'');
+            //过滤多余空格
+            html = html.replace(' ',' ');
+            return html;
+        }
+
+
+        var Ext = Ext || {}; // Ext namespace won't be defined yet...
+
+        // This function is called by the Microloader after it has performed basic
+        // device detection. The results are provided in the "tags" object. You can
+        // use these tags here or even add custom tags. These can be used by platform
+        // filters in your manifest or by platformConfig expressions in your app.
+        //
+        Ext.beforeLoad = function (tags) {
+            var s = location.search,  // the query string (ex "?foo=1&bar")
+                profile;
+
+            // For testing look for "?classic" or "?modern" in the URL to override
+            // device detection default.
+            //
+            if (s.match(/\bclassic\b/)) {
+                profile = 'classic';
+            }
+            else if (s.match(/\bmodern\b/)) {
+                profile = 'modern';
+            }
+            else {
+                //profile = tags.desktop ? 'classic' : 'modern';
+                profile = tags.phone ? 'modern' : 'classic';
+            }
+
+            Ext.manifest = profile; // this name must match a build profile name
+
+            // This function is called once the manifest is available but before
+            // any data is pulled from it.
+            //
+            //return function (manifest) {
+                // peek at / modify the manifest object
+            //};
+        };
+    </script>
+
+
+    <!-- The line below must be kept intact for Sencha Cmd to build your application -->
+    <script id="microloader" type="text/javascript" src="bootstrap.js"></script>
+    <script type="text/javascript" charset="utf-8" src="./ueditor/ueditor.config.js"></script>
+    <script type="text/javascript" charset="utf-8" src="./ueditor/ueditor.all.js"> </script>
+    <script type="text/javascript" charset="utf-8" src="/ueditor/lang/zh-cn/zh-cn.js"></script>
+</head>
+<body></body>
+</html>

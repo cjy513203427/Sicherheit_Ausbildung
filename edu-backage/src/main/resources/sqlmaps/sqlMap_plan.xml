@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="plan">
+
+    <!--培训系统PC版-查询培训记录列表-->
+    <sqlTemplate id="queryPlanList">
+        <![CDATA[
+            SELECT
+                T1.company_id,
+                T1.id programId,
+                T2.id planId,
+                T1.program_name,
+                T1.program_type,
+                DATE_FORMAT(T2.start_date,'%Y-%m-%d %H:%i:%s') startDate,
+                DATE_FORMAT(T2.end_date,'%Y-%m-%d %H:%i:%s') endDate,
+                (SELECT count(T3.id) FROM edu_traplan_labour_rel T3 WHERE T3.train_plan_id = T2.id) labourCount
+            FROM
+                 edu_train_program T1
+            INNER JOIN edu_train_plan T2 ON T2.program_id = T1.id
+            WHERE
+                T1.company_id = :companyId
+            <#if programType?? && programType != '' >
+                AND T1.program_type = :programType
+            </#if>
+            <#if programName?? && programName != '' >
+                AND T1.program_name LIKE CONCAT('%',:programName,'%')
+            </#if>
+        ]]>
+    </sqlTemplate>
+
+    <!--培训系统PC版-查询培训计划合格人数-->
+    <sqlTemplate id="queryPassCount">
+        <![CDATA[
+            SELECT
+                count(T2.id)
+            FROM
+                edu_exam_train T1
+            INNER JOIN edu_examlabour_rel T2 ON T2.exam_id = T1.id
+            INNER JOIN edu_traplan_labour_rel T3 ON T3.labour_id = T2.labourer_id
+            WHERE
+                T1.train_program_id = :programId
+            AND T2.exam_type = :examType
+            AND T3.train_plan_id = :planId
+            AND T2.pass_status = :passStatus
+        ]]>
+    </sqlTemplate>
+
+    <!--培训系统PC版-查询培训记录列表数量-->
+    <sqlTemplate id="queryPlanCount">
+        <![CDATA[
+            SELECT
+                count(T2.id)
+            FROM
+                 edu_train_program T1
+            INNER JOIN edu_train_plan T2 ON T2.program_id = T1.id
+            WHERE
+                T1.company_id = :companyId
+            <#if programType?? && programType != '' >
+                AND T1.program_type = :programType
+            </#if>
+            <#if programName?? && programName != '' >
+                AND T1.program_name LIKE CONCAT('%',:programName,'%')
+            </#if>
+        ]]>
+    </sqlTemplate>
+
+    <!--培训系统PC版-查询培训记录详情-->
+    <sqlTemplate id="queryPlanDetails">
+        <![CDATA[
+            SELECT
+                T4.realname,
+                (SELECT T5.site_name FROM build_site T5 WHERE T5.`code` = T4.build_site_code LIMIT 1) siteName,
+                (SELECT DATE_FORMAT(start_date,'%Y-%m-%d %H:%i')FROM edu_train_plan WHERE id = :planId) startDate,
+                (SELECT DATE_FORMAT(start_date, '%H:%i')FROM edu_train_plan WHERE id = :planId) examDate,
+                T2.exam_score,
+                T2.pass_status
+            FROM
+                edu_exam_train T1
+            INNER JOIN edu_examlabour_rel T2 ON T2.exam_id = T1.id
+            INNER JOIN edu_traplan_labour_rel T3 ON T3.labour_id = T2.labourer_id
+            INNER JOIN build_labourer T4 ON T4.id = T3.labour_id
+            WHERE
+                T1.train_program_id = :programId
+            AND T2.exam_type = :examType
+            AND T3.train_plan_id = :planId
+        ]]>
+    </sqlTemplate>
+
+    <!--添加培训计划-->
+    <sqlTemplate id="addPlan">
+        <![CDATA[
+            INSERT INTO `edu_train_plan` (
+                `program_id`,
+                `program_name`,
+                `start_date`,
+                `end_date`,
+                `question_play_times`
+            )
+            VALUES
+                (
+                    :programId,
+                    :programName,
+                    :startDate,
+                    :endDate,
+                    :questionPlayTimes
+                );
+        ]]>
+    </sqlTemplate>
+
+    <!--更新培训计划-->
+    <sqlTemplate id="updatePlan">
+        <![CDATA[
+            UPDATE `edu_train_plan`
+            SET
+            UPDATE_TIME = CURRENT_TIMESTAMP
+            <#if programName?? && programName != '' >
+                ,PROGRAM_NAME = :programName
+            </#if>
+            <#if startDate?? && startDate != '' >
+                ,start_date = :startDate
+            </#if>
+            <#if endDate?? && endDate != '' >
+                ,end_date = :endDate
+            </#if>
+            <#if questionPlayTimes?? && questionPlayTimes != '' >
+                ,question_play_times = :questionPlayTimes
+            </#if>
+            WHERE
+             1=1
+             <#if programId?? && programId != '' >
+                AND PROGRAM_ID = :programId
+            </#if>
+            <#if id?? && id != '' >
+                AND id = :id
+            </#if>
+
+        ]]>
+    </sqlTemplate>
+
+    <!--保存方案计划人员关系-->
+    <sqlTemplate id="savePlanLabourRel">
+        <![CDATA[
+            INSERT INTO edu_traplan_labour_rel (
+                `train_plan_id`,
+                `labour_id`
+            )
+            VALUES
+            <#list labourIds as labourId>
+                    (
+                        :planId,
+                        '${labourId}'
+                    )
+                <#if labourId_has_next>,</#if>
+		    </#list>
+        ]]>
+    </sqlTemplate>
+
+    <!--删除方案计划人员关系-->
+    <sqlTemplate id="deleteLabPlanRel">
+        <![CDATA[
+            DELETE FROM `edu_traplan_labour_rel`
+            WHERE train_plan_id = :planId
+        ]]>
+    </sqlTemplate>
+
+    <!--培训系统PC版 - 方案修改查询详情-->
+    <sqlTemplate id="queryPlanById">
+        <![CDATA[
+            SELECT * FROM edu_train_plan WHERE id = :id
+        ]]>
+    </sqlTemplate>
+
+    <!--查询计划人员关系-->
+    <sqlTemplate id="queryRel">
+        <![CDATA[
+            SELECT
+                l.*, b.realname
+            FROM
+                edu_traplan_labour_rel l
+            LEFT JOIN build_labourer b ON l.labour_id = b.id
+            WHERE
+                train_plan_id = :id
+        ]]>
+    </sqlTemplate>
+
+    <!--删除计划-->
+    <sqlTemplate id="deletePlan">
+        <![CDATA[
+            DELETE FROM edu_train_plan
+            WHERE
+            <#if id?? && id != '' >
+                id = :id
+            </#if>
+            <#if programId?? && programId != '' >
+                PROGRAM_ID = :programId
+            </#if>
+        ]]>
+    </sqlTemplate>
+
+    <!--培训系统PC版-查询培训信息用于导出word-->
+    <sqlTemplate id="queryTrainInfo">
+        <![CDATA[
+            SELECT
+            T1.program_name,
+            T1.program_type,
+            DATE_FORMAT(T2.start_date, '%Y-%m-%d') startDate,
+            DATE_FORMAT(T2.end_date, '%Y-%m-%d') endDate,
+            (SELECT company_name FROM build_company T3 WHERE T3.id = :companyId) companyName
+        FROM
+            edu_train_program T1
+        INNER JOIN edu_train_plan T2 ON T2.program_id = T1.id
+        WHERE
+            T1.company_id = :companyId
+        AND T2.id = :planId
+        ]]>
+    </sqlTemplate>
+
+    <!--培训系统PC版-查询培训内容用于导出word-->
+    <sqlTemplate id="queryTrainContent">
+        <![CDATA[
+            SELECT
+                T2.title videoTitle,
+                T3.title chapterTitle
+            FROM
+                edu_train_lesson_rel T1
+            INNER JOIN edu_video T2 ON T2.id = T1.video_id
+            INNER JOIN edu_chapter_content T3 ON T3.edu_video_id = T2.id
+            WHERE
+                T1.train_program_id = :programId
+        ]]>
+    </sqlTemplate>
+
+    <!--培训系统PC版-查询全部学员的考试成绩用于导出word-->
+    <sqlTemplate id="queryAllUserExamScore">
+        <![CDATA[
+            SELECT
+                T4.id labourerId,
+                T4.realname,
+                T4.id_card,
+                T4.base_64_photo basePhoto,
+                T4.work_type,
+                (SELECT T5.site_name FROM build_site T5 WHERE T5.`code` = T4.build_site_code LIMIT 1) siteName,
+                T2.exam_score,
+                T2.pass_status
+            FROM
+                edu_exam_train T1
+            INNER JOIN edu_examlabour_rel T2 ON T2.exam_id = T1.id
+            INNER JOIN edu_traplan_labour_rel T3 ON T3.labour_id = T2.labourer_id
+            INNER JOIN build_labourer T4 ON T4.id = T3.labour_id
+            WHERE
+                T1.train_program_id = :programId
+            AND T2.exam_type = :examType
+            AND T3.train_plan_id = :planId
+        ]]>
+    </sqlTemplate>
+
+    <!--培训系统PC版-查询我的答案-->
+    <sqlTemplate id="queryMyAnswers">
+        <![CDATA[
+            SELECT
+                T2.my_answer
+            FROM
+                edu_exam_train T1
+             INNER JOIN edu_exam_answercard T2 ON T2.exam_id = T1.id
+             WHERE
+                T1.train_program_id = :programId
+             AND T2.exam_type = :examType
+             AND T2.labour_id = :labourerId
+             ORDER BY
+                T2.question_id
+        ]]>
+    </sqlTemplate>
+
+    <!--培训系统PC版 - 查询题目集合用于导出word-->
+    <sqlTemplate id="queryQuestionsList">
+        <![CDATA[
+           SELECT
+                T3.id questionId,
+                T3.title titleName,
+                T3.true_answer
+            FROM
+                edu_exam_train T1
+            INNER JOIN edu_exam_question_rel T2 ON T2.exam_id = T1.id
+            INNER JOIN edu_question T3 ON T2.question_id = T3.id
+            WHERE
+                T1.train_program_id = :programId
+            AND T2.exam_type = :examType
+            AND T3.question_type = :questionType
+        ]]>
+    </sqlTemplate>
+
+    <!--培训系统PC版 - 查询选项集合用于导出word-->
+    <sqlTemplate id="queryOptions">
+        <![CDATA[
+           SELECT option_code,option_content FROM edu_question_answer WHERE question_id = :questionId
+        ]]>
+    </sqlTemplate>
+
+    <!--培训系统PC版 - 查询根据ID查询方案名称-->
+    <sqlTemplate id="queryProgramNameById">
+        <![CDATA[
+           SELECT program_name FROM edu_train_program WHERE id = :programId
+        ]]>
+    </sqlTemplate>
+    <!--查询学员培训信息-->
+    <sqlTemplate id="queryBuildLabourerTrainInfo">
+        <![CDATA[
+        SELECT
+        T1.program_type,
+        T2.start_date,
+        (SELECT company_name FROM build_company T3 WHERE T3.id = 1) companyName,
+        (SELECT pass_status FROM edu_examlabour_rel eer WHERE eer.labourer_id = :labourerId AND exam_id = :examId)passStatus
+        FROM
+        edu_train_program T1
+        INNER JOIN edu_train_plan T2 ON T2.program_id = T1.id INNER JOIN edu_traplan_labour_rel etlr ON etlr.labour_id = :labourerId
+        WHERE
+        T1.company_id = :companyId
+        AND T2.id = etlr.train_plan_id
+        ]]>
+    </sqlTemplate>
+    <!--查询学员培训内容-->
+    <sqlTemplate id="queryBuildLabourerTrainContent">
+        <![CDATA[
+        SELECT
+        T2.title videoTitle,
+        T3.title chapterTitle
+        FROM
+        edu_train_lesson_rel T1
+        INNER JOIN edu_video T2 ON T2.id = T1.video_id
+        INNER JOIN edu_chapter_content T3 ON T3.edu_video_id = T2.id
+        WHERE
+        T1.train_program_id IN(SELECT train_program_id FROM edu_exam_train WHERE id IN
+        (SELECT exam_id from edu_examlabour_rel WHERE labourer_id = :labourerId AND exam_id = :examId))
+        ]]>
+    </sqlTemplate>
+    <!--获取学员examId-->
+    <sqlTemplate id="getExamIdFromEduExamlabourRel">
+        <![CDATA[
+            SELECT exam_id FROM edu_examlabour_rel
+            WHERE labourer_id = :labourerId
+        ]]>
+    </sqlTemplate>
+
+    <!--获取考试分数-->
+    <sqlTemplate id="getExamScoreFromEduExamlabourRel">
+        <![CDATA[
+            SELECT exam_score FROM edu_examlabour_rel eer
+            WHERE exam_id = :examId AND labourer_id = :labourerId
+        ]]>
+    </sqlTemplate>
+    <!--从答题卡中获取答题记录-->
+    <sqlTemplate id="getAnswerFromEduExamAnswercard">
+        <![CDATA[
+            SELECT
+            my_answer answers,
+            answer_status
+            FROM edu_exam_answercard
+            WHERE labour_id = :labourerId AND exam_id = :examId
+        ]]>
+    </sqlTemplate>
+    <!--查询正确答案-->
+    <sqlTemplate id="getTrueAnswerFromEduQuestion">
+        <![CDATA[
+             SELECT DISTINCT
+             eq.id,
+             eq.true_answer
+             FROM edu_question eq,edu_exam_answercard eea
+             WHERE eea.question_id = eq.id
+        ]]>
+    </sqlTemplate>
+
+    <!--获取试卷选项和选项内容-->
+    <sqlTemplate id = "getEduQuestionInfo">
+        <![CDATA[
+            SELECT
+                eqa.option_code,
+                eqa.option_content
+            FROM
+                edu_question eq,
+                edu_question_answer eqa
+            WHERE
+                eq.id = eqa.question_id AND
+                eq.id IN (
+                    SELECT
+                        question_id
+                    FROM
+                        edu_exam_question_rel eeqr
+                    WHERE
+                        exam_id = :examId
+	                )
+            <#if questionType?? && questionType != '' >
+                AND eq.question_type = :questionType
+            </#if>
+            <#if questionId?? && questionId != '' >
+                AND eq.id = :questionId
+            </#if>
+        ]]>
+    </sqlTemplate>
+
+    <!--获取试卷题目-->
+    <sqlTemplate id="getEduQuestionTitleInfo">
+        <![CDATA[
+        SELECT
+        DISTINCT eq.id,
+        eq.title
+        FROM
+        edu_question eq,
+        edu_question_answer eqa
+        WHERE
+        eq.id = eqa.question_id AND
+        eq.id IN (
+        SELECT
+        question_id
+        FROM
+        edu_exam_question_rel eeqr
+        WHERE
+        exam_id = :examId
+        )
+        <#if questionType?? && questionType != '' >
+                AND eq.question_type = :questionType
+         </#if>
+        ]]>
+    </sqlTemplate>
+</sqls>

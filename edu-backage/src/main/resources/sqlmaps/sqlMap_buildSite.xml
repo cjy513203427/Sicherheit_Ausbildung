@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="buildSite">
+    <!-- ====================================== sql======================================= -->
+
+    <!--建筑工地信息查询（或有条件）-->
+    <sqltemplate id="queryBuildSiteList">
+        <![CDATA[
+               SELECT
+                    id,
+                    `code`,
+                    address,
+                    account_number,
+                    unit_price,
+                    site_introduction,
+                    contact_name,
+                    site_name,
+                    contact_phone,
+                    create_user_id,
+                    (
+                        SELECT
+                            cu.realname
+                        FROM
+                            ct_user cu
+                        WHERE
+                            bs.saleman_id = cu.id
+                    ) salemanName,
+                    `status`,
+                    saleman_id,
+                    (
+                        SELECT
+                            cu.realname
+                        FROM
+                            ct_user cu
+                        WHERE
+                            bs.create_user_id = cu.id
+                    ) createUserName,
+                    DATE_FORMAT(create_time,'%Y-%m-%d %H:%i:%s') createTime,
+                    DATE_FORMAT(update_time,'%Y-%m-%d %H:%i:%s') updateTime
+               FROM
+                   build_site bs
+               WHERE 1=1
+               <#if code?? && code != '' >
+                        AND `code` LIKE CONCAT('%',:code,'%')
+               </#if>
+               <#if contactName?? && contactName != '' >
+                        AND contact_name LIKE CONCAT('%',:contactName,'%')
+               </#if>
+               <#if contactPhone?? && contactPhone != '' >
+                        AND contact_phone LIKE CONCAT('%',:contactPhone,'%')
+               </#if>
+               <#if createTime?? && createTime != '' >
+                        AND DATE_FORMAT(create_time, '%Y-%m-%d') = :createTime
+               </#if>
+               <#if status?? && status != '' >
+                        AND `status` = :status
+               </#if>
+               <#if id?? && id != '' >
+                        AND `id` = :id
+               </#if>
+               <#if superParam?? && superParam != '' >
+                        AND(
+                        address LIKE CONCAT('%',:superParam,'%')
+                        OR  code LIKE CONCAT('%',:superParam,'%')
+                        )
+               </#if>
+               ORDER BY ID DESC
+               <#if pageOffset?? && pageOffset != '' &&  pageSize?? && pageSize !='' >
+                        LIMIT :pageOffset , :pageSize
+               </#if>
+		]]>
+    </sqltemplate>
+
+    <sqltemplate id="queryBuildSiteById">
+        <![CDATA[
+               SELECT
+                    id,
+                    `code`,
+                    address,
+                    account_number,
+                    unit_price,
+                    site_introduction,
+                    contact_name,
+                    site_name,
+                    contact_phone,
+                    create_user_id,
+                    (
+                        SELECT
+                            cu.realname
+                        FROM
+                            ct_user cu
+                        WHERE
+                            bs.saleman_id = cu.id
+                    ) salemanName,
+                    `status`,
+                    saleman_id,
+                    (
+                        SELECT
+                            cu.realname
+                        FROM
+                            ct_user cu
+                        WHERE
+                            bs.create_user_id = cu.id
+                    ) createUserName,
+                    DATE_FORMAT(create_time,'%Y-%m-%d %H:%i:%s') createTime,
+                    DATE_FORMAT(update_time,'%Y-%m-%d %H:%i:%s') updateTime
+               FROM
+                   build_site bs
+               WHERE 1=1 AND `id` = :labourerId
+		]]>
+    </sqltemplate>
+
+    <sqltemplate id="queryBuildSiteAttachment">
+        <![CDATA[
+           SELECT
+                bs.site_name,
+                ba.attachment_name,
+                ba.attachment_path
+            FROM
+                build_site bs
+            LEFT JOIN build_attachment ba ON ba.foreign_id = bs.id
+            WHERE
+                1 = 1	AND bs.id = :labourerId
+        ]]>
+    </sqltemplate>
+
+    <!--建筑工地信息数量查询（或有条件）-->
+    <sqltemplate id="queryBuildSiteCount">
+        <![CDATA[
+			 SELECT
+                COUNT(id)
+            FROM
+                build_site
+			 WHERE 1=1
+			<#if code?? && code != '' >
+                     AND `code` LIKE CONCAT('%',:code,'%')
+            </#if>
+            <#if contactName?? && contactName != '' >
+                     AND contact_name LIKE CONCAT('%',:contactName,'%')
+            </#if>
+            <#if contactPhone?? && contactPhone != '' >
+                     AND contact_phone LIKE CONCAT('%',:contactPhone,'%')
+            </#if>
+            <#if createTime?? && createTime != '' >
+                     AND DATE_FORMAT(create_time, '%Y-%m-%d') = :createTime
+            </#if>
+            <#if status?? && status != '' >
+                     AND `status` = :status
+            </#if>
+            <#if id?? && id != '' >
+                     AND `id` = :id
+            </#if>
+		]]>
+    </sqltemplate>
+
+    <!--工地启用禁用-->
+    <sqltemplate id="enOrDisBuildSite">
+        <![CDATA[
+			 UPDATE build_site
+             SET `status` = :status
+             WHERE
+                 id = :id
+		]]>
+    </sqltemplate>
+
+    <!--自动生成工地编号-->
+    <sqltemplate id="insertNullRecord">
+        <![CDATA[
+             INSERT INTO build_site VALUES()
+		]]>
+    </sqltemplate>
+
+    <!--新增建筑工地-->
+    <sqltemplate id="createBuildSite">
+        <![CDATA[
+            UPDATE build_site
+            SET `code` = :code,
+            address = :address,
+            account_number = :accountNumber,
+            unit_price = :unitPrice,
+            contact_name = :contactName,
+            contact_phone = :contactPhone,
+            create_user_id = :createUserId,
+            `status` = 2,
+            saleman_id = :salemanId,
+            create_time = NOW()
+            WHERE
+                id = :id
+		]]>
+    </sqltemplate>
+
+    <!--修改建筑工地-->
+    <sqltemplate id="updateBuildSite">
+        <![CDATA[
+            UPDATE build_site
+            SET address = :address,
+            account_number = :accountNumber,
+            unit_price = :unitPrice,
+            contact_name = :contactName,
+            contact_phone = :contactPhone,
+            saleman_id = :salemanId
+            WHERE
+                id = :id
+        ]]>
+    </sqltemplate>
+
+    <!--禁用工地对应的账号-->
+    <sqltemplate id="disBuildLabourers">
+        <![CDATA[
+            UPDATE build_labourer
+            SET `status` = :status
+            WHERE
+                build_site_code = :code
+        ]]>
+    </sqltemplate>
+    <!--查询子节点-->
+    <sqltemplate id="queryChildNode">
+        <![CDATA[
+            SELECT address,company_id,code FROM build_site WHERE company_id IS NOT NULL
+        ]]>
+    </sqltemplate>
+    <!--根据公司id查询子节点-->
+    <sqltemplate id="queryChildNodeByCompanyId">
+        <![CDATA[
+            SELECT id,site_name,address,company_id,code FROM build_site WHERE company_id = #{companyId}
+        ]]>
+    </sqltemplate>
+    <!--添加单位信息-->
+    <sqlTemplate id="addBuildSite">
+        <![CDATA[
+            INSERT build_site SET
+            site_name = :siteName,
+            contact_name = :contactName,
+            contact_phone = :contactPhone,
+            site_introduction = :siteIntroduction,
+            company_id = :companyId
+        ]]>
+    </sqlTemplate>
+
+
+    <!--修改单位信息-->
+    <sqltemplate id="modifyBuildSite">
+        <![CDATA[
+            UPDATE build_site SET
+            site_name = :siteName,
+            contact_name = :contactName,
+            contact_phone = :contactPhone,
+            site_introduction = :siteIntroduction
+            WHERE id = :id
+        ]]>
+    </sqltemplate>
+
+    <sqltemplate id="updateBuildSiteCode">
+        <![CDATA[
+            UPDATE build_site SET
+            code = :code
+            WHERE id = :id
+        ]]>
+    </sqltemplate>
+    <!--删除单位/分公司/工地-->
+    <sqlTemplate id="deleteBuildSite">
+        <![CDATA[
+            DELETE FROM build_site WHERE
+            id = :id
+        ]]>
+    </sqlTemplate>
+</sqls>

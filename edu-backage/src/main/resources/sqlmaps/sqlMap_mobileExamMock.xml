@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="mobileExamMock">
+    <!-- ====================================== sql======================================= -->
+
+    <!--手机端模拟试卷信息列表查询-->
+    <sqltemplate id="queryExamMockList">
+        <![CDATA[
+            SELECT
+                T1.id,
+                T1.exam_name,
+                T1.question_number,
+                T1.total_score,
+                T1.consume_minute,
+                T1.post_type
+            FROM
+                edu_exam_mock T1,
+                build_labourer T2
+            WHERE
+                T1.post_type = T2.post_type
+            AND T2.id = :labourerUserId
+		]]>
+    </sqltemplate>
+
+    <!--建筑工地人员模拟考试信息查询-->
+    <sqltemplate id="queryExamMockLabourers">
+        <![CDATA[
+            SELECT
+                id,
+                labourer_id,
+                exam_id,
+                exam_type,
+                exam_score,
+                pass_status,
+                consume_time,
+                complete_time,
+                create_time,
+                update_time
+            FROM
+                edu_examlabour_rel
+            WHERE
+                labourer_id = :labourerUserId
+            AND exam_type = :examType
+		]]>
+    </sqltemplate>
+
+    <!--手机端模拟考试试题查询-->
+    <sqltemplate id="queryMobileMockQuestions">
+        <![CDATA[
+            SELECT
+                T2.id,
+                T2.title,
+                T2.question_type,
+                T2.answer_analysis
+            FROM
+                edu_exam_question_rel T1
+            INNER JOIN edu_question T2 ON T2.id = T1.question_id
+            WHERE
+                T1.exam_id = :examId
+            AND T1.exam_type = :examType
+            <#if upOrDownStatus == '1' >
+                AND T1.question_id > :questionId
+                ORDER BY T2.id ASC
+            </#if>
+            <#if upOrDownStatus == '2' >
+                AND T1.question_id < :questionId
+                ORDER BY T2.id DESC
+            </#if>
+            LIMIT 1
+		]]>
+    </sqltemplate>
+
+    <!--手机端查询试题选项-->
+    <sqltemplate id="queryQuestionAnswer">
+        <![CDATA[
+            SELECT
+                question_id,
+                option_code,
+                option_content,
+                correct_flag
+            FROM
+                edu_question_answer
+            WHERE
+                question_id = :questionId
+		]]>
+    </sqltemplate>
+
+    <!--答题卡是否存在-->
+    <sqltemplate id="queryAnswerCardCount">
+        <![CDATA[
+            SELECT
+                COUNT(id)
+            FROM
+                edu_exam_answercard
+            WHERE
+                labour_id = :labourerId
+            AND exam_id = :examId
+            AND exam_type = :examType
+		]]>
+    </sqltemplate>
+
+    <!--创建答题卡-->
+    <sqltemplate id="createAnswerCard">
+        <![CDATA[
+            INSERT INTO edu_exam_answercard (
+                exam_id,
+                exam_type,
+                labour_id,
+                question_id
+            )
+            VALUES
+            <#list questionIds as questionId>
+            (
+                :examId,
+                :examType,
+                :labourerId,
+                '${questionId}'
+            )
+            <#if questionId_has_next>,</#if>
+            </#list>
+		]]>
+    </sqltemplate>
+
+    <!--获取题目ID-->
+    <sqltemplate id="queryQuestionIds">
+        <![CDATA[
+            SELECT
+                T2.id
+            FROM
+                edu_exam_question_rel T1
+            INNER JOIN edu_question T2 ON T2.id = T1.question_id
+            WHERE
+                T1.exam_id = :examId
+            AND T1.exam_type = :examType
+		]]>
+    </sqltemplate>
+
+    <!--手机端答题卡查询接口-->
+    <sqltemplate id="queryAnswerCard">
+        <![CDATA[
+            SELECT
+                id,
+                exam_id,
+                exam_type,
+                question_id,
+                my_answer,
+                labour_id,
+                answer_status,
+                DATE_FORMAT(create_time,'%Y-%m-%d %H:%i:%s') createTime,
+              DATE_FORMAT(update_time,'%Y-%m-%d %H:%i:%s') updateTime
+            FROM
+                edu_exam_answercard
+            WHERE
+                exam_id = :examId
+            AND exam_type = :examType
+            AND labour_id = :labourerId
+            ORDER BY question_id ASC
+		]]>
+    </sqltemplate>
+
+    <!--创建考试人员考试结果-->
+    <sqltemplate id="createExamLabourerRel">
+        <![CDATA[
+            INSERT INTO edu_examlabour_rel (
+                labourer_id,
+                exam_id,
+                exam_type
+            )
+            VALUES
+                (:labourerId, :examId, :examType);
+		]]>
+    </sqltemplate>
+
+    <!--保存答案-->
+    <sqltemplate id="saveAnswer">
+        <![CDATA[
+            UPDATE edu_exam_answercard
+            SET my_answer = :myAnswer, answer_status = :answerStatus
+            WHERE
+                exam_id = :examId
+            AND exam_type = :examType
+            AND question_id = :questionId
+            AND labour_id = :labourerId
+		]]>
+    </sqltemplate>
+
+    <!--正确题数-->
+    <sqltemplate id="trueQuestionCount">
+        <![CDATA[
+            SELECT
+                COUNT(id)
+            FROM
+                edu_exam_answercard
+            WHERE
+                labour_id = :labourerId
+            AND exam_id = :examId
+            AND exam_type = :examType
+            AND answer_status = :answerStatus
+		]]>
+    </sqltemplate>
+
+    <!--实际考试耗时（秒）-->
+    <sqltemplate id="queryConsumeTime">
+        <![CDATA[
+            SELECT
+                UNIX_TIMESTAMP(CURRENT_TIMESTAMP)
+            - UNIX_TIMESTAMP(STR_TO_DATE(create_time,'%Y-%m-%d %H:%i:%s')) consumeTime
+            FROM
+                edu_examlabour_rel
+            WHERE labourer_id = :labourerId
+            AND exam_id = :examId
+            AND exam_type = :examType
+		]]>
+    </sqltemplate>
+
+    <!--实际考试耗时（秒）-->
+    <sqltemplate id="handInExamMock">
+        <![CDATA[
+            UPDATE edu_examlabour_rel
+            SET exam_score = :examScore ,
+             pass_status = :passStatus,
+             <#if consumeTime?? && consumeTime != '' >
+             consume_time = :consumeTime,
+             </#if>
+             complete_time = CURRENT_TIMESTAMP
+            WHERE
+                labourer_id = :labourerId
+            AND exam_id = :examId
+            AND exam_type = :examType
+		]]>
+    </sqltemplate>
+
+    <!--考试结果-->
+    <sqltemplate id="queryExamLabourerRel">
+        <![CDATA[
+            SELECT
+                T1.id,
+                T1.labourer_id,
+                T1.exam_id,
+                T1.exam_type,
+                T1.exam_score,
+                T1.pass_status,
+                T1.consume_time,
+                T1.complete_time,
+                T1.create_time,
+                T1.update_time ,
+                T2.question_number
+        FROM
+            edu_examlabour_rel T1,
+            edu_exam_mock T2
+        WHERE
+            T1.exam_id = :examId
+        AND T1.exam_type = :examType
+        AND T1.labourer_id = :labourerId
+        AND T2.id = :examId
+		]]>
+    </sqltemplate>
+
+    <!--我的答案-->
+    <sqltemplate id="queryMyAnswer">
+        <![CDATA[
+            SELECT
+                my_answer
+            FROM
+                edu_exam_answercard
+            WHERE
+                labour_id = :labourerId
+            AND exam_id = :examId
+            AND exam_type = :examType
+            AND question_id = :questionId
+		]]>
+    </sqltemplate>
+
+    <!--考试结果是否存在-->
+    <sqltemplate id="queryRelCount">
+        <![CDATA[
+            SELECT
+                count(id)
+            FROM
+                edu_examlabour_rel
+            WHERE
+                labourer_id = :labourerId
+            AND exam_id = :examId
+            AND exam_type = :examType
+		]]>
+    </sqltemplate>
+
+
+    <!--手机端单个模拟考试试题详情查询-->
+    <sqltemplate id="queryMockQuestionById">
+        <![CDATA[
+            SELECT
+                T2.id,
+                T2.title,
+                T2.question_type,
+                T2.answer_analysis,
+                (
+                    SELECT
+                        exam_name
+                    FROM
+                        edu_exam_mock
+                    WHERE
+                        id = :examId
+                ) examName
+            FROM
+                edu_exam_question_rel T1
+            INNER JOIN edu_question T2 ON T2.id = T1.question_id
+            WHERE
+                T1.exam_id = :examId
+            AND T1.exam_type = :examType
+            AND T1.question_id = :questionId
+		]]>
+    </sqltemplate>
+
+    <!--清除答题卡-->
+    <sqltemplate id="cleanAnswerCard">
+        <![CDATA[
+            UPDATE edu_exam_answercard
+            SET my_answer = NULL,
+                answer_status = NULL,
+                create_time = CURRENT_TIMESTAMP,
+                update_time = CURRENT_TIMESTAMP
+            WHERE
+                exam_id = :examId
+            AND exam_type = :examType
+            AND labour_id = :labourerId
+		]]>
+    </sqltemplate>
+
+    <!--清除考试结果-->
+    <sqltemplate id="cleanExamLabourerRel">
+        <![CDATA[
+            UPDATE edu_examlabour_rel
+            SET exam_score = NULL,
+                pass_status = NULL,
+                consume_time = NULL,
+                complete_time = NULL,
+                create_time = CURRENT_TIMESTAMP,
+                update_time = CURRENT_TIMESTAMP
+            WHERE
+                labourer_id = :labourerId
+            AND exam_id = :examId
+            AND exam_type = :examType
+		]]>
+    </sqltemplate>
+
+    <!--考试剩余时间-->
+    <sqltemplate id="queryHasedTime">
+        <![CDATA[
+            SELECT
+            UNIX_TIMESTAMP(STR_TO_DATE(create_time,'%Y-%m-%d %H:%i:%s'))
+            + (SELECT consume_minute * 60 FROM edu_exam_mock WHERE id = :examId)
+            - UNIX_TIMESTAMP(CURRENT_TIMESTAMP) hasedTime
+            FROM
+                edu_examlabour_rel
+            WHERE
+                labourer_id = :labourerId
+            AND exam_id = :examId
+            AND exam_type = :examType
+		]]>
+    </sqltemplate>
+
+</sqls>

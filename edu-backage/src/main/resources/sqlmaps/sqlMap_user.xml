@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="user">
+<!-- ====================================== sql======================================= -->
+	<!-- 获取用户下的表 sql 语句 -->
+	<sqltemplate id="queryUserById">
+		<![CDATA[
+			 select
+			 	*
+			 from ct_user
+			 where id= :id and status = '1'
+		]]>
+	</sqltemplate>
+
+	<sqltemplate id="queryUserByUsername">
+		<![CDATA[
+			SELECT
+				u.*, bc.company_name
+			FROM
+				ct_user u
+			LEFT JOIN build_company bc ON u.company_id = bc.id
+			WHERE
+				u.username = :username
+		]]>
+	</sqltemplate>
+
+	<sqltemplate id="querySupervisorByCompanyId">
+		<![CDATA[
+			 select
+			 	*
+			 from ct_user
+			 where company_id= :companyId
+		]]>
+	</sqltemplate>
+
+	<sqltemplate id="queryLabourIdsByPostType">
+		<![CDATA[
+			 select
+			 	id
+			 from build_labourer
+			 where post_type = :postType and status = 1
+		]]>
+	</sqltemplate>
+
+	<!--查询用户列表（或有条件）-->
+	<sqltemplate id="queryUserList">
+		<![CDATA[
+			 select
+				ID,
+				EMPLOYEE_NO,
+				USERNAME,
+				REALNAME,
+				TELEPHONE,
+				USER_TYPE,
+				QQ,
+				SEX,
+				STATUS,
+				DINGID ,
+				DATE_FORMAT(CREATE_TIME,'%Y-%m-%d %H:%i:%s')   createTime,
+				DATE_FORMAT(UPDATE_TIME,'%Y-%m-%d %H:%i:%s')   updateTime
+			 from ct_user
+			 WHERE 1=1
+			 <#if username?? && username != '' >
+					AND USERNAME  LIKE CONCAT('%',:username,'%')
+			 </#if>
+			 <#if employeeNo?? && employeeNo != '' >
+					AND EMPLOYEE_NO  LIKE CONCAT('%',:employeeNo,'%')
+			 </#if>
+			 <#if realname?? && realname != '' >
+					AND REALNAME  LIKE CONCAT('%',:realname,'%')
+			 </#if>
+			 ORDER BY ID DESC
+			 <#if pageOffset?? && pageOffset != '' &&  pageSize?? && pageSize !='' >
+					LIMIT :pageOffset , :pageSize
+			 </#if>
+
+		]]>
+	</sqltemplate>
+
+	<!--查询用户总数（或有条件）-->
+	<sqltemplate id="queryUserCount">
+		<![CDATA[
+			 SELECT
+			 	COUNT(ID)
+			 FROM CT_USER
+			 WHERE 1=1
+			 <#if username?? && username != '' >
+					AND USERNAME  LIKE CONCAT('%',:username,'%')
+			 </#if>
+			 <#if employeeNo?? && employeeNo != '' >
+					AND EMPLOYEE_NO  LIKE CONCAT('%',:employeeNo,'%')
+			 </#if>
+			 <#if realname?? && realname != '' >
+					AND REALNAME  LIKE CONCAT('%',:realname,'%')
+			 </#if>
+		]]>
+	</sqltemplate>
+
+	<!--添加用户-->
+	<sqltemplate id="saveUser">
+		<![CDATA[
+			 INSERT INTO  CT_USER
+						(
+							EMPLOYEE_NO,
+							USERNAME,
+							PASSWORD,
+							REALNAME,
+							TELEPHONE,
+							QQ,
+							SEX,
+							USER_TYPE,
+							STATUS
+							<#if siteCode?? && siteCode != '' >
+								, site_code
+							</#if>
+						)
+						VALUES
+						(
+							:employeeNo,
+							:username,
+							:password,
+							:realname,
+							:telephone,
+							:qq,
+							:sex,
+							:userType,
+							'1'
+							<#if siteCode?? && siteCode != '' >
+								, :siteCode
+							</#if>
+						)
+		]]>
+	</sqltemplate>
+
+	<!--修改用户-->
+	<sqltemplate id="modifyUser">
+		<![CDATA[
+			 UPDATE  CT_USER
+			 SET
+			 <#if employeeNo?? && employeeNo != '' >
+					EMPLOYEE_NO = :employeeNo ,
+			 </#if>
+
+			 <#if password?? && password != '' >
+					PASSWORD = :password,
+			 </#if>
+
+			 <#if realname?? && realname != '' >
+					REALNAME = :realname,
+			 </#if>
+
+			 <#if telephone?? && telephone != '' >
+					TELEPHONE = :telephone,
+			 </#if>
+
+			 <#if qq?? && qq != '' >
+					QQ = :qq,
+			 </#if>
+
+			 <#if sex?? && sex != '' >
+					SEX = :sex,
+			 </#if>
+
+			 <#if userType?? && userType != '' >
+					USER_TYPE = :userType,
+			 </#if>
+
+			 <#if status?? && status != '' >
+					STATUS = :status,
+			 </#if>
+					UPDATE_TIME = current_timestamp
+			 WHERE ID = :id
+		]]>
+	</sqltemplate>
+
+	<!--更改用户状态-->
+	<sqltemplate id="changeUserState">
+		<![CDATA[
+			 UPDATE  CT_USER
+			 SET
+			 <#if state?? && state != '' >
+					STATUS = :state,
+			 </#if>
+					UPDATE_TIME = current_timestamp
+			 WHERE ID IN (${userIds})
+		]]>
+	</sqltemplate>
+
+	<!--重置密码-->
+	<sqltemplate id="resetPassword">
+		<![CDATA[
+			 UPDATE  CT_USER SET PASSWORD = :password , MODIFY_STATUS = 1
+			 WHERE
+			 ID = :id
+		]]>
+	</sqltemplate>
+
+	<!--获取用户角色-->
+	<sqltemplate id="getUserRole">
+		<![CDATA[
+		SELECT role_id from ct_user_role_relation where user_id = :id
+		]]>
+	</sqltemplate>
+
+	<!--删除用户角色-->
+	<sqltemplate id="deleteUserRole">
+		<![CDATA[
+		 	DELETE from ct_user_role_relation where user_id = :id
+		]]>
+	</sqltemplate>
+
+	<!--分配用户角色-->
+	<sqltemplate id="insertUserRole">
+		<![CDATA[
+		 	INSERT INTO ct_user_role_relation  (user_id,role_id) VALUES
+         <#list userToRoles as userToRole>
+				(
+					'${userToRole.id}',
+					'${userToRole.roleId}'
+				)
+			<#if userToRole_has_next>,</#if>
+		</#list>
+		]]>
+	</sqltemplate>
+
+	<!--查询所有用户,所有status=1 all in-->
+	<sqltemplate id="getAllUser">
+		<![CDATA[
+			 select
+				ID,
+				EMPLOYEE_NO,
+				USERNAME,
+				REALNAME,
+				TELEPHONE,
+				SEX,
+				USER_TYPE,
+				DINGID
+			 from ct_user
+			 WHERE STATUS=1
+			 ORDER BY ID
+		]]>
+	</sqltemplate>
+
+	<!--修改用户的DINGID，此处独立写的原因就是矫情-->
+	<sqltemplate id="updateUserDingId">
+		<![CDATA[
+			 UPDATE  CT_USER
+			 SET
+				DINGID = :dingid
+			 WHERE ID = :id
+		]]>
+	</sqltemplate>
+
+
+	<sqltemplate id="queryUserByDingId">
+		<![CDATA[
+			SELECT
+					ID,
+					EMPLOYEE_NO,
+					USERNAME,
+					PASSWORD,
+					REALNAME,
+					TELEPHONE,
+					QQ,
+					SEX,
+					USER_TYPE,
+					MODIFY_STATUS,
+					STATUS,
+					CREATE_TIME,
+					UPDATE_TIME,
+					DINGID
+
+				FROM CT_USER
+				where DINGID = :dingID
+		]]>
+	</sqltemplate>
+
+	<!--根据角色名查询角色ID-->
+	<sqltemplate id="queryRoleIdByRoleName">
+		<![CDATA[
+			SELECT
+				id
+			FROM
+				ct_role
+			WHERE
+				`name` = :roleName
+		]]>
+	</sqltemplate>
+
+	<!--根据角色查询用户-->
+	<sqltemplate id="queryUserByRole">
+		<![CDATA[
+			SELECT
+				u.id,
+				u.Employee_no,
+				u.realname,
+				u.username
+			FROM
+				ct_user u
+			INNER JOIN ct_user_role_relation rr ON u.id = rr.user_id
+			AND rr.role_id = :roleId
+		]]>
+	</sqltemplate>
+
+
+	<sqltemplate id="queryUserListByRoleName">
+		<![CDATA[
+			SELECT
+					U.ID,
+					U.EMPLOYEE_NO,
+					U.USERNAME,
+					U.PASSWORD,
+					U.REALNAME,
+					U.TELEPHONE,
+					U.QQ,
+					U.SEX,
+					U.USER_TYPE,
+					U.MODIFY_STATUS,
+					U.STATUS,
+					U.CREATE_TIME,
+					U.UPDATE_TIME,
+					U.DINGID
+			FROM  CT_USER U
+			INNER JOIN CT_USER_ROLE_RELATION  UR ON U. ID = UR.USER_ID
+			WHERE UR.ROLE_ID IN (SELECT ID FROM CT_ROLE WHERE NAME =:roleName )
+		]]>
+	</sqltemplate>
+
+	<!--根据计划id查询用户-->
+	<sqltemplate id="queryLabourIdsByPlanId">
+		<![CDATA[
+			SELECT
+				l.*,
+				b.realname
+			FROM
+				edu_traplan_labour_rel l
+				LEFT JOIN build_labourer b ON l.labour_id = b.id
+			WHERE
+				l.train_plan_id = :planId
+		]]>
+	</sqltemplate>
+
+
+</sqls>

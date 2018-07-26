@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="program">
+    <!-- ====================================== sql======================================= -->
+
+    <!--新建方案-->
+    <sqltemplate id="saveProgram">
+        <![CDATA[
+            INSERT edu_train_program
+            ( company_id,program_name ,program_type ,cover_path,cover_base64)
+            values (:companyId, :programName, :programType, :coverPath,:coverBase64)
+		]]>
+    </sqltemplate>
+
+    <!--新建方案试卷-->
+    <sqltemplate id="saveProgramTest">
+        <![CDATA[
+            INSERT edu_exam_train
+            ( train_program_id ,total_score ,pass_score ,question_number)
+            values (:trainProgramId, :totalScore, :passScore, :questionNumber)
+		]]>
+    </sqltemplate>
+
+    <!--保存课程方案-->
+    <sqltemplate id="saveTrainLesson">
+        <![CDATA[
+            INSERT edu_train_lesson_rel
+            ( train_program_id ,video_id ,chapter_content_id)
+               values
+            <#list courseIds as courseId>
+				(
+				    :programId,
+					:eduVideoId,
+					'${courseId}'
+				)
+			<#if courseId_has_next>,</#if>
+		</#list>
+		]]>
+    </sqltemplate>
+
+    <!--方案总数-->
+    <sqltemplate id="countProgram">
+        <![CDATA[
+            SELECT
+                count(id)
+            FROM
+                edu_train_program
+            WHERE
+                company_id = :companyId
+                <#if programName?? && programName != ''>
+					AND program_name LIKE concat('%',:programName,'%')
+			    </#if>
+			    <#if programType?? && programType != ''>
+					AND program_type = :programType
+			    </#if>
+			    <#if id?? && id != ''>
+					AND id = :id
+			    </#if>
+
+		]]>
+    </sqltemplate>
+
+    <!--查询方案列表-->
+    <sqltemplate id="queryProgramInfo">
+        <![CDATA[
+            SELECT
+                id,
+                company_id,
+                program_name,
+                program_type,
+                cover_path,
+                cover_base64,
+                create_time,
+                update_time
+            FROM
+                edu_train_program
+            WHERE
+                company_id = :companyId
+                <#if programName?? && programName != ''>
+					AND program_name LIKE concat('%',:programName,'%')
+			    </#if>
+			    <#if programType?? && programType != ''>
+					AND program_type = :programType
+			    </#if>
+			    <#if id?? && id != ''>
+					AND id = :id
+			    </#if>
+                <#if pageOffset?? && pageOffset != '' &&  pageSize?? && pageSize !='' >
+					LIMIT :pageOffset , :pageSize
+			    </#if>
+		]]>
+    </sqltemplate>
+
+    <!--查询方案列表-->
+    <sqltemplate id="savetraProgramExamCfg">
+        <![CDATA[
+            INSERT INTO EDU_TRAPROGRAM_EXAM_CFG
+                        (
+                            train_program_id,
+                            single_simple_total,
+                            single_simple_select,
+                            single_simple_ratio,
+                            single_medium_total,
+                            single_medium_select,
+                            single_medium_ratio,
+                            single_difficulty_total,
+                            single_difficulty_select,
+                            single_difficulty_ratio,
+                            multi_simple_total,
+                            multi_simple_select,
+                            multi_simple_ratio,
+                            multi_medium_total,
+                            multi_medium_select,
+                            multi_medium_ratio,
+                            multi_difficulty_total,
+                            multi_difficulty_select,
+                            multi_difficulty_ratio
+                        )
+                        VALUES
+                        (
+                            :trainProgramId,
+                            :singleSimpleTotal,
+                            :singleSimpleSelect,
+                            :singleSimpleRatio,
+                            :singleMediumTotal,
+                            :singleMediumSelect,
+                            :singleMediumRatio,
+                            :singleDifficultyTotal,
+                            :singleDifficultySelect,
+                            :singleDifficultyRatio,
+                            :multiSimpleTotal,
+                            :multiSimpleSelect,
+                            :multiSimpleRatio,
+                            :multiMediumTotal,
+                            :multiMediumSelect,
+                            :multiMediumRatio,
+                            :multiDifficultyTotal,
+                            :multiDifficultySelect,
+                            :multiDifficultyRatio
+                        )
+		]]>
+    </sqltemplate>
+
+    <!--删除自动组卷设置-->
+    <sqltemplate id="deleteCfg">
+        <![CDATA[
+            DELETE FROM EDU_TRAPROGRAM_EXAM_CFG WHERE TRAIN_PROGRAM_ID = :programId
+		]]>
+    </sqltemplate>
+
+    <!--根据方案ID查询试卷ID-->
+    <sqltemplate id="queryProgramTestPaper">
+        <![CDATA[
+            SELECT id FROM edu_exam_train WHERE train_program_id = :programId
+		]]>
+    </sqltemplate>
+
+    <!--删除课程方案-->
+    <sqltemplate id="deleteCourseProgram">
+        <![CDATA[
+            DELETE FROM EDU_TRAIN_LESSON_REL WHERE TRAIN_PROGRAM_ID = :programId
+		]]>
+    </sqltemplate>
+
+    <!--删除方案试卷-->
+    <sqltemplate id="deleteProgramTestPaper">
+        <![CDATA[
+            DELETE FROM
+                EDU_EXAM_TRAIN
+            WHERE
+                TRAIN_PROGRAM_ID = :programId
+		]]>
+    </sqltemplate>
+
+    <!--删除方案试卷关系 -->
+    <sqltemplate id="deleteProgramTestPaperRel">
+        <![CDATA[
+            DELETE FROM
+                EDU_EXAM_QUESTION_REL
+            WHERE
+                EXAM_ID = :programTestPaperId
+            AND EXAM_TYPE = :examType
+		]]>
+    </sqltemplate>
+
+    <!--删除方案-->
+    <sqltemplate id="deleteProgram">
+        <![CDATA[
+            DELETE FROM
+                EDU_TRAIN_PROGRAM
+            WHERE
+                ID = :programId
+		]]>
+    </sqltemplate>
+
+    <!--查询方案封面-->
+    <sqltemplate id="queryProgramCoverPath">
+        <![CDATA[
+            SELECT cover_path FROM edu_train_program WHERE ID = :programId
+		]]>
+    </sqltemplate>
+
+    <!--根据方案ID更新方案-->
+    <sqltemplate id="updateProgram">
+        <![CDATA[
+            UPDATE edu_train_program
+            SET UPDATE_TIME = CURRENT_TIMESTAMP
+            <#if programName?? && programName != ''>
+			    ,program_name = :programName
+			</#if>
+			<#if coverPath?? && coverPath != ''>
+			    ,cover_path = :coverPath
+			</#if>
+            WHERE ID = :id
+		]]>
+    </sqltemplate>
+
+</sqls>

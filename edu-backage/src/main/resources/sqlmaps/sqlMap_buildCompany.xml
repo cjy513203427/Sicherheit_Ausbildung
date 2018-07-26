@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="buildCompany">
+    <!--查询父类-->
+    <sqlTemplate id="queryParentNode">
+        <![CDATA[
+            SELECT
+                bc.id,
+                bc.company_name
+            FROM
+                build_company bc INNER JOIN ct_user cu ON bc.id = cu.company_id
+            WHERE cu.id = :userId
+        ]]>
+    </sqlTemplate>
+
+    <!--查询建筑公司列表数量-->
+    <sqlTemplate id="queryBuildCompanyCount">
+        <![CDATA[
+            SELECT count(id) FROM build_company
+            WHERE 1=1
+             <#if companyName?? && companyName != '' >
+                  AND company_name LIKE CONCAT('%',:companyName,'%')
+            </#if>
+            <#if status?? && status != '' >
+                  AND `status`=:status
+            </#if>
+            <#if createTime?? && createTime != '' >
+                  AND DATE_FORMAT(create_time, '%Y-%m-%d') = :createTime
+            </#if>
+        ]]>
+    </sqlTemplate>
+
+    <!--查询建筑公司列表-->
+    <sqlTemplate id="queryBuildCompany">
+        <![CDATA[
+            SELECT
+                id,
+                company_name,
+                account_number,
+                unit_price,
+                create_user_id,
+                create_username,
+                `status`,
+                saleman_id,
+                (SELECT realname FROM ct_user cu WHERE saleman_id = cu.id) salesmanName,
+                create_time,
+                update_time
+            FROM
+                build_company
+            WHERE 1=1
+             <#if companyName?? && companyName != '' >
+                  AND company_name LIKE CONCAT('%',:companyName,'%')
+            </#if>
+            <#if status?? && status != '' >
+                  AND `status`=:status
+            </#if>
+            <#if createTime?? && createTime != '' >
+                  AND DATE_FORMAT(create_time, '%Y-%m-%d') = :createTime
+            </#if>
+        ]]>
+    </sqlTemplate>
+
+    <!--新增建筑公司-->
+    <sqlTemplate id="createBuildCompany">
+        <![CDATA[
+            INSERT INTO build_company (
+                company_name,
+                account_number,
+                unit_price,
+                create_user_id,
+                create_username,
+                `status`,
+                saleman_id
+            )
+            VALUES
+            (
+                 :companyName,
+                 :accountNumber,
+                 :unitPrice,
+                 :createUserId,
+                 :createUsername,
+                 :status,
+                 :salesmanId
+            );
+        ]]>
+    </sqlTemplate>
+
+    <!--修改建筑公司-->
+    <sqlTemplate id="updateBuildCompany">
+        <![CDATA[
+            UPDATE build_company
+            SET update_time = CURRENT_TIMESTAMP
+            <#if companyName?? && companyName != '' >
+                 ,company_name = :companyName
+            </#if>
+            <#if accountNumber?? && accountNumber != '' >
+                 ,account_number = :accountNumber
+            </#if>
+            <#if accountNumber?? && accountNumber != '' >
+                ,unit_price = :unitPrice
+            </#if>
+             <#if salesmanId?? && salesmanId != '' >
+                 ,saleman_id = :salesmanId
+            </#if>
+            WHERE
+                id = :id
+        ]]>
+    </sqlTemplate>
+
+    <!--建筑公司启用和禁用-->
+    <sqlTemplate id="enOrDisBuildCompany">
+        <![CDATA[
+            UPDATE build_company
+            SET `status` = :status
+            WHERE
+                id = :id
+        ]]>
+    </sqlTemplate>
+</sqls>

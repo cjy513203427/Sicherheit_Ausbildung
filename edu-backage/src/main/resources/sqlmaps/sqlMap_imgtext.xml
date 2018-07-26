@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="imgtext">
+    <!-- ====================================== sql======================================= -->
+    <!--pc 查询图文列表-->
+    <sqltemplate id="queryImgtxtList">
+        <![CDATA[
+			SELECT
+				id,
+                title,
+                introduce,
+                content_classify,
+                (select classify_name from edu_imgtxt_classify where id = content_classify ) classifyName,
+                content,
+                image_path,
+                browse_times,
+                audio_path,
+                pdf_path,
+                post_type,
+				DATE_FORMAT(CREATE_TIME,'%Y-%m-%d %H:%i:%s') createTime ,
+				DATE_FORMAT(update_time,'%Y-%m-%d %H:%i:%s')  updateTime
+			FROM EDU_IMG_TEXT
+			WHERE 1=1
+            <#if contentClassify?? && contentClassify != '' >
+                 and content_classify = :contentClassify
+            </#if>
+            <#if ids?? && ids != '' >
+                 and id in (${ids})
+            </#if>
+		]]>
+    </sqltemplate>
+
+    <!--PC端图文列表总数-->
+    <sqltemplate id="countImgtxt">
+        <![CDATA[
+			SELECT
+				count(id)
+			FROM EDU_IMG_TEXT
+			WHERE 1=1
+            <#if contentClassify?? && contentClassify != '' >
+                 and content_classify = :contentClassify
+            </#if>
+		]]>
+    </sqltemplate>
+
+    <!--根据id删除图文-->
+    <sqltemplate id="delPicArticle">
+        <![CDATA[
+			DELETE
+            FROM
+                EDU_IMG_TEXT
+            WHERE
+                id IN (${ids})
+		]]>
+    </sqltemplate>
+
+    <!--移动端 查询图文集锦-->
+    <sqltemplate id="imgTextCollectionInfo">
+        <![CDATA[
+			SELECT
+                eit.id,
+                eit.title,
+                eit.introduce,
+                eit.content_classify,
+                (select classify_name from edu_imgtxt_classify where id = eit.content_classify ) classifyName,
+                eic.classify_name,
+                eit.content,
+                eit.image_path,
+                IFNULL(eit.browse_times,0) browseTimes,
+                eit.audio_path,
+                eit.pdf_path,
+                eit.post_type,
+				DATE_FORMAT(eit.CREATE_TIME,'%Y-%m-%d %H:%i:%s') createTime ,
+				DATE_FORMAT(eit.update_time,'%Y-%m-%d %H:%i:%s')  updateTime
+			FROM
+                EDU_IMG_TEXT eit
+            LEFT JOIN edu_imgtxt_classify eic ON eit.content_classify = eic.id
+			where
+                 (eit.post_type = :postType
+                 <#if createUserIds?? && createUserIds != '' >
+                 OR EIT.CREATE_USER_ID in ${createUserIds}
+                 </#if>
+                 )
+            <#if title?? && title != '' >
+                 and eit.title LIKE CONCAT('%',:title,'%')
+            </#if>
+            <#if contentClassify?? && contentClassify != '' >
+                 and eit.content_classify = :contentClassify
+            </#if>
+            ORDER BY
+            <#if browseTimes?? && browseTimes != '' >
+                eit.browse_times DESC,
+            </#if>
+			    eit.create_time DESC
+		]]>
+    </sqltemplate>
+
+    <!--根据图文id查询图文详情-->
+    <sqltemplate id="imgTextDetial">
+        <![CDATA[
+			SELECT
+                eit.id,
+                eit.title,
+                eit.introduce,
+                eit.content_classify,
+                eic.classify_name,
+                eit.content,
+                eit.image_path,
+                IFNULL(eit.browse_times,0) browseTimes,
+                eit.audio_path,
+                eit.pdf_path,
+                eit.post_type,
+				DATE_FORMAT(eit.CREATE_TIME,'%Y-%m-%d %H:%i:%s') createTime ,
+				DATE_FORMAT(eit.update_time,'%Y-%m-%d %H:%i:%s')  updateTime,
+				ec.id collectId
+			FROM
+                EDU_IMG_TEXT eit
+            LEFT JOIN edu_imgtxt_classify eic ON eit.content_classify = eic.id
+            LEFT JOIN edu_collection ec ON eit.id = ec.reference_id AND ec.collection_type = 2 AND ec.labour_id = :labourId
+			where
+                 eit.id = :imgTextId
+		]]>
+    </sqltemplate>
+
+    <!--  更新图文信息 -->
+    <sqltemplate id="updateAudioPathById">
+        <![CDATA[
+			 UPDATE  EDU_IMG_TEXT
+			 SET
+			    update_time = CURRENT_TIMESTAMP
+
+			    <#if audioPath?? && audioPath != '' >
+                       , audio_path = :audioPath
+                </#if>
+
+			 where id = :id
+		]]>
+    </sqltemplate>
+
+    <!--  更新图文内容缩略图路径 -->
+    <sqltemplate id="uploadLitimg">
+        <![CDATA[
+			 UPDATE  EDU_IMG_TEXT
+			 SET
+			    update_time = CURRENT_TIMESTAMP
+
+			    <#if filePath?? && filePath != '' >
+                       , image_path = :filePath
+                </#if>
+
+			 where id = :picArticleId
+		]]>
+    </sqltemplate>
+
+    <!--更新图文浏览次数-->
+    <sqltemplate id="markLearnTimes">
+        <![CDATA[
+            UPDATE EDU_IMG_TEXT
+            SET browse_times = CASE
+            WHEN browse_times IS NULL THEN
+                1
+            ELSE
+                browse_times + 1
+            END
+            WHERE
+                id = :imgTextId
+		]]>
+    </sqltemplate>
+
+    <!--更新图文信息-->
+    <sqltemplate id="updatePicArticle">
+        <![CDATA[
+            UPDATE edu_img_text
+            SET
+                update_time = CURRENT_TIMESTAMP
+                <#if title?? && title != '' >
+                      ,  title = :title
+                </#if>
+                <#if content?? && content != '' >
+                      , content = :content
+                </#if>
+                <#if imagePath?? && imagePath != '' >
+                      , image_path = :imagePath
+                </#if>
+                <#if audioPath?? && audioPath != '' >
+                      , audio_path = :audioPath
+                </#if>
+                <#if pdfPath?? && pdfPath != '' >
+                      , pdf_path = :pdfPath
+                </#if>
+            WHERE
+            id = :id
+		]]>
+    </sqltemplate>
+
+    <!--增加图文内容-->
+    <sqltemplate id="addPicArticle">
+        <![CDATA[
+           INSERT INTO edu_img_text
+            set title = :title,
+            introduce = :introduce,
+            content_classify = :contentClassify,
+            create_user_id = :createUserId
+            <#if postType?? && postType != '' >
+                       , post_type = :postType
+            </#if>
+            <#if content?? && content != '' >
+                       , content = :content
+            </#if>
+            <#if imagePath?? && imagePath != '' >
+                       , image_path = :imagePath
+            </#if>
+            <#if pdfPath?? && pdfPath != '' >
+                       , pdf_path = :pdfPath
+            </#if>
+
+		]]>
+    </sqltemplate>
+
+    <!--查询出我的图文收藏-->
+    <sqltemplate id="queryCollectImgtxtBy">
+        <![CDATA[
+			SELECT
+				it.id,
+                it.title,
+                it.introduce,
+                it.content_classify,
+                (select classify_name from edu_imgtxt_classify where id = it.content_classify ) classify_name,
+                it.content,
+                it.image_path,
+                it.browse_times,
+                it.audio_path,
+                it.pdf_path,
+                it.post_type,
+                DATE_FORMAT(it.CREATE_TIME,'%Y-%m-%d %H:%i:%s') createTime ,
+                DATE_FORMAT(it.update_time,'%Y-%m-%d %H:%i:%s')  updateTime
+            FROM EDU_IMG_TEXT it
+            Inner join  edu_collection co
+            on  it.id = co.reference_id
+            and co.collection_type = :collectionType
+            and co.labour_id = :labourId
+            order by it.id desc
+		]]>
+    </sqltemplate>
+
+
+    <!--查询该用户图文的学习记录-->
+    <sqltemplate id="queryStudyReorcdBy">
+        <![CDATA[
+			SELECT
+				distinct it.id,
+                it.title,
+                it.introduce,
+                it.content_classify,
+                (select classify_name from edu_imgtxt_classify where id = it.content_classify ) classify_name,
+                it.content,
+                it.image_path,
+                it.browse_times,
+                it.audio_path,
+                it.pdf_path,
+                it.post_type,
+                DATE_FORMAT(it.CREATE_TIME,'%Y-%m-%d %H:%i:%s') createTime ,
+                DATE_FORMAT(it.update_time,'%Y-%m-%d %H:%i:%s')  updateTime
+            FROM EDU_IMG_TEXT it
+            Inner join  edu_imgtxt_labour t2
+            on  it.id = t2.img_txt_id
+            and t2.labour_id = :labourId
+            order by it.id desc
+		]]>
+    </sqltemplate>
+
+    <!--根据图文id, 查询id和大于当前该图文id的下一个图文信息-->
+    <sqltemplate id="queryNextImgTestById">
+        <![CDATA[
+            SELECT
+                id,
+                title,
+                introduce,
+                content_classify,
+                content,
+                image_path,
+                browse_times,
+                audio_path,
+                pdf_path,
+                post_type,
+                create_user_id,
+                create_time,
+                update_time
+            FROM edu_img_text WHERE id > :imgTextId ORDER BY id LIMIT 1
+		]]>
+    </sqltemplate>
+</sqls>

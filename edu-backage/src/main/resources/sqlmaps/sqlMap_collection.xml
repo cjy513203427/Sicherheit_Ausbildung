@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="collection">
+    <!-- ====================================== sql======================================= -->
+
+    <!--手机端添加收藏-->
+    <sqltemplate id="addCollection">
+        <![CDATA[
+            INSERT INTO edu_collection (
+                labour_id,
+                collection_type,
+                reference_id
+            )
+            VALUES
+                (:labourId, :collectionType, :referenceId);
+		]]>
+    </sqltemplate>
+
+    <sqltemplate id="deleteCollection">
+        <![CDATA[
+             DELETE FROM EDU_COLLECTION
+             WHERE LABOUR_ID = :labourId
+                AND COLLECTION_TYPE = :collectionType
+                AND REFERENCE_ID = :referenceId
+		]]>
+    </sqltemplate>
+
+
+    <!--根据外键和类型删除收藏-->
+    <sqltemplate id="deleteCollectionByReferenceIdAndType">
+        <![CDATA[
+             DELETE FROM EDU_COLLECTION
+             WHERE
+                COLLECTION_TYPE = :collectionType
+                AND REFERENCE_ID in (${referenceId})
+		]]>
+    </sqltemplate>
+
+    <!--手机端是否已经收藏-->
+    <sqltemplate id="isExisting">
+        <![CDATA[
+            SELECT
+                count(id)
+            FROM
+                edu_collection
+            WHERE
+                labour_id = :labourId
+            AND collection_type = :collectionType
+            AND reference_id = :referenceId
+		]]>
+    </sqltemplate>
+</sqls>

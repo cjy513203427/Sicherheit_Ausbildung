@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="eduQuestionExercise">
+    <sqltemplate id="queryEduQuestionExercise">
+    <![CDATA[
+        SELECT
+        	`id`,
+            `question_bank_id`,
+            `question_id`,
+            `labour_id`,
+            `my_answer`,
+            `answer_status`,
+            `create_time`,
+            `update_time`
+        FROM
+        edu_question_exercise
+        WHERE 1=1
+        <#if answerStatus?? && answerStatus != '' >
+              AND answer_status=:answerStatus
+        </#if>
+        <#if labourId?? && labourId != '' >
+              AND labour_id=:labourId
+        </#if>
+        <#if questionBankId?? && questionBankId != '' >
+              AND question_bank_id=:questionBankId
+        </#if>
+    ]]>
+    </sqltemplate>
+
+    <sqltemplate id="countEduQuestionExercise">
+        <![CDATA[
+        SELECT
+        	COUNT(1)
+        FROM
+        edu_question_exercise
+        WHERE 1=1
+        <#if answerStatus?? && answerStatus != '' >
+              AND answer_status=:answerStatus
+        </#if>
+        <#if labourId?? && labourId != '' >
+              AND labour_id=:labourId
+        </#if>
+        <#if questionBankId?? && questionBankId != '' >
+              AND question_bank_id=:questionBankId
+        </#if>
+    ]]>
+    </sqltemplate>
+
+    <sqltemplate id="addEduQuestionExercise">
+    <![CDATA[
+          INSERT INTO  `edu_question_exercise` (
+            `question_bank_id`,
+            `question_id`,
+            `labour_id`,
+            `my_answer`,
+            `answer_status`)
+            VALUES
+             ( :questionBankId,
+                :questionId,
+                :labourId,
+                :myAnswer,
+                :answerStatus
+             )
+    ]]>
+    </sqltemplate>
+
+    <sqltemplate id="getRightAnswer">
+        SELECT
+            GROUP_CONCAT(option_code order by option_code )
+        FROM edu_question_answer
+        WHERE correct_flag = 1 AND question_id = :questionId
+        order by option_code
+    </sqltemplate>
+
+    <sqltemplate id="countAnswerdQuestion">
+        <![CDATA[
+            SELECT
+                question_bank_id ,
+	            (select count(id) from  edu_question_exercise where question_bank_id = t.question_bank_id and answer_status ='1' AND labour_id=:labourId) correctCount,
+                COUNT(1) answerdCount
+            FROM
+                edu_question_exercise t
+            WHERE  labour_id = :labourId
+
+             <#if questionBankId?? && questionBankId != '' >
+                AND t.question_bank_id = :questionBankId
+             </#if>
+
+            GROUP BY question_bank_id
+        ]]>
+    </sqltemplate>
+
+    <sqltemplate id="queryEduQuestionBankTitle">
+    <![CDATA[
+			     SELECT
+                    eqb.`id`,
+                    eqb.`title`,
+                    eqb.`create_time` ,
+                    (SELECT COUNT( id ) FROM edu_question  WHERE question_bank_id = eqb.id )  totalCount
+                FROM
+                    edu_question_bank eqb
+                WHERE
+                    eqb.post_type = :postType
+                    AND eqb.delete_status = 1
+		]]>
+    </sqltemplate>
+
+    <sqltemplate id="getAllAccuracy">
+        <![CDATA[
+                SELECT
+                round( ifnull (
+                    (
+                    SELECT
+                    COUNT(1)
+                    FROM
+                    edu_question_exercise
+                    WHERE
+                    answer_status = 2 AND labour_id = :labourId
+                    ) / (
+                    SELECT
+                    COUNT(1)
+                    FROM
+                    edu_question_exercise WHERE labour_id = :labourId
+                    ),
+                    0 ) ,
+                    2 ) allAccuracy
+            ]]>
+    </sqltemplate>
+
+
+    <!--章节练习 上一题、下一题-->
+    <sqltemplate id="queryNextOrPrevQuestion">
+        <![CDATA[
+        SELECT
+            ID,
+            QUESTION_BANK_ID,
+            TITLE,
+            QUESTION_TYPE,
+            DELETE_STATUS,
+            ANSWER_ANALYSIS,
+            CREATE_USER_ID,
+            CREATE_TIME
+
+        FROM  EDU_QUESTION eq
+        WHERE QUESTION_BANK_ID = :questionBankId
+
+        <#if nextPrevFlag?? && nextPrevFlag=='1'>
+            AND eq.id > :questionId
+            order by eq.id asc
+        <#elseif nextPrevFlag?? && nextPrevFlag=='2'>
+            AND eq.id < :questionId
+            order by eq.id desc
+        </#if>
+
+        limit 1
+                ]]>
+    </sqltemplate>
+
+
+
+
+
+    <!--查看错题 上一题、下一题-->
+    <sqltemplate id="queryNextOrPrevQuestionForWrong">
+        <![CDATA[
+                SELECT
+                    eq.ID,
+                    eq.QUESTION_BANK_ID,
+                    eq.TITLE,
+                    eq.QUESTION_TYPE,
+                    eq.DELETE_STATUS,
+                    eq.ANSWER_ANALYSIS,
+                    eq.CREATE_USER_ID,
+                    eq.CREATE_TIME
+
+                FROM  EDU_QUESTION eq ,
+                      EDU_QUESTION_EXERCISE eqe
+                WHERE eq.ID = eqe.question_id
+                      and eqe.answer_status = '2'
+                      and eqe.labour_id = :labourId
+
+                <#if nextPrevFlag?? && nextPrevFlag=='1'>
+                    AND eq.id > :questionId
+                    order by eq.id asc
+
+                <#elseif nextPrevFlag?? && nextPrevFlag=='2'>
+                    AND eq.id < :questionId
+                    order by eq.id desc
+                </#if>
+
+                limit 1
+        ]]>
+    </sqltemplate>
+
+
+
+    <!-- 根据条件查询练习记录 -->
+    <sqltemplate id="queryQuestionExercise">
+        <![CDATA[
+                 SELECT
+                    `id`,
+                    `question_bank_id`,
+                    `question_id`,
+                    `labour_id`,
+                    `my_answer`,
+                    `answer_status`,
+                    `create_time`,
+                    `update_time`
+                FROM edu_question_exercise
+                where question_bank_id = :questionBankId
+                    and question_id = :questionId
+                    and labour_id = :labourId
+
+                ]]>
+    </sqltemplate>
+
+</sqls>

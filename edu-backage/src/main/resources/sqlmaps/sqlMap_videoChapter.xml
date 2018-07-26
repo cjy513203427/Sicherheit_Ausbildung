@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="videoChapter">
+    <!-- ====================================== sql======================================= -->
+    <!--查询章节列表（或有条件）-->
+    <sqltemplate id="queryChapterList">
+        <![CDATA[
+			SELECT
+                evc.id,
+                evc.edu_video_id,
+                evc.chapter_name,
+                evc.create_user_id,
+                evc.create_time,
+                ev.title eduVideoName
+            FROM
+                edu_video_chapter evc
+            LEFT JOIN edu_video ev ON evc.edu_video_id = ev.id
+            where 1=1
+            <#if eduVideoId?? && eduVideoId != '' >
+				AND evc.edu_video_id  = :eduVideoId
+			</#if>
+			<#if chapterName?? && chapterName != '' >
+				AND evc.chapter_name  LIKE CONCAT('%',:chapterName,'%')
+			</#if>
+			<#if eduVideoName?? && eduVideoName != '' >
+				AND ev.TITLE  LIKE CONCAT('%',:eduVideoName,'%')
+			</#if>
+			ORDER BY evc.edu_video_id
+			<#if pageOffset?? && pageSize!= '' >
+                LIMIT :pageOffset,:pageSize
+            </#if>
+		]]>
+    </sqltemplate>
+
+    <!--查询视频总数（或有条件）-->
+    <sqltemplate id="countChapter">
+        <![CDATA[
+			 SELECT
+			 	COUNT(evc.ID)
+			 FROM edu_video_chapter evc
+			 LEFT JOIN edu_video ev ON evc.edu_video_id = ev.id
+			 WHERE 1=1
+			 <#if eduVideoId?? && eduVideoId != '' >
+				AND evc.edu_video_id  = :eduVideoId
+			</#if>
+			<#if chapterName?? && chapterName != '' >
+				AND evc.chapter_name  LIKE CONCAT('%',:chapterName,'%')
+			</#if>
+			<#if eduVideoName?? && eduVideoName != '' >
+				AND ev.TITLE  LIKE CONCAT('%',:eduVideoName,'%')
+			</#if>
+		]]>
+    </sqltemplate>
+
+    <!--添加章节-->
+    <sqltemplate id="addChapter">
+        <![CDATA[
+			 INSERT INTO  edu_video_chapter
+			 SET
+			    chapter_name = :chapterName
+			    <#if eduVideoId?? && eduVideoId != ''>
+			        ,edu_video_id = :eduVideoId
+			    </#if>
+			    <#if forPeople?? && forPeople != ''>
+			        ,for_people = :forPeople
+			    </#if>
+			    <#if createUserId?? && createUserId != ''>
+			        ,create_user_id = :createUserId
+			    </#if>
+		]]>
+    </sqltemplate>
+
+    <!--修改章节-->
+    <sqltemplate id="updateChapter">
+        <![CDATA[
+			 UPDATE  edu_video_chapter
+			 SET
+			    id = :id
+			 <#if chapterName?? && chapterName != '' >
+					,chapter_name = :chapterName
+			 </#if>
+			 <#if eduVideoId?? && eduVideoId != ''>
+			        ,edu_video_id = :eduVideoId
+			 </#if>
+			 WHERE ID = :id
+		]]>
+    </sqltemplate>
+
+    <!--根据集锦id查询章节信息-->
+    <sqltemplate id="queryChapterListByCollectionId">
+        <![CDATA[
+			 SELECT
+                id,
+                edu_video_id,
+                chapter_name,
+                create_user_id,
+                create_time
+            FROM
+                edu_video_chapter
+            where  edu_video_id  = :collectionId
+		]]>
+    </sqltemplate>
+
+    <!--根据章节id删除章节所有视频-->
+    <sqltemplate id="deleteVideoByChapterId">
+        <![CDATA[
+			DELETE FROM edu_chapter_content
+            WHERE video_chapter_id IN (${ids})
+		]]>
+    </sqltemplate>
+
+    <!--根据id删除章节信息-->
+    <sqltemplate id="deleteChapter">
+        <![CDATA[
+			DELETE FROM edu_video_chapter
+            WHERE id IN (${ids})
+		]]>
+    </sqltemplate>
+
+    <!--根据章节id查询视频内容-->
+    <sqltemplate id="queryContentByChapterIds">
+        <![CDATA[
+			SELECT
+                id,
+                edu_video_id,
+                video_chapter_id,
+                title,
+                video_path
+            FROM
+                edu_chapter_content
+            WHERE
+                video_chapter_id IN (${ids})
+		]]>
+    </sqltemplate>
+
+    <!--培训系统PC版 查询全部章节-->
+    <sqltemplate id="queryAllChapter">
+        <![CDATA[
+			SELECT
+                id,
+                edu_video_id,
+                chapter_name
+            FROM
+                edu_video_chapter
+            where edu_video_id = :materialId
+		]]>
+    </sqltemplate>
+
+</sqls>

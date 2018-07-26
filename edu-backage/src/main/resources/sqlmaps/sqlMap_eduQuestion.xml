@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="eduQuestion">
+    <sqltemplate id="queryEduQuestion">
+        <![CDATA[
+			 SELECT
+                    eq.`id`,
+                    eq.`question_bank_id`,
+                    eq.`title`,
+                    eq.`question_type`,
+                    eq.`create_user_id`,
+                    eq.`create_time`,
+                    eq.`answer_analysis`,
+                    eq.difficulty_degree ,
+                    cu.`realname`
+                FROM
+                    edu_question eq INNER JOIN ct_user cu
+                WHERE 1=1
+                    AND cu.id = eq.create_user_id
+                <#if questionBankId?? && questionBankId!=''>
+                    AND eq.question_bank_id = :questionBankId
+                </#if>
+                <#if title?? && title != '' >
+                    AND eq.title LIKE CONCAT('%',:title,'%')
+                </#if>
+                    AND eq.delete_status = 1
+                <#if pageOffset?? && pageSize?? >
+                LIMIT :pageOffset,:pageSize
+                </#if>
+		]]>
+    </sqltemplate>
+
+    <sqltemplate id="countEduQuestion">
+        <![CDATA[
+			 SELECT
+                    COUNT(1)
+                FROM
+                    edu_question
+                WHERE 1=1
+                <#if questionBankId?? && questionBankId!=''>
+                    AND question_bank_id = :questionBankId
+                </#if>
+                <#if title?? && title != '' >
+                    AND title LIKE CONCAT('%',:title,'%')
+                </#if>
+                    AND delete_status = 1
+		]]>
+    </sqltemplate>
+
+    <sqltemplate id="modifyEduQuestion">
+        <![CDATA[
+            UPDATE edu_question
+             SET
+                update_time = current_timestamp
+                <#if title?? && title != '' >
+                    ,title = :title
+                </#if>
+                <#if questionType?? && questionType != '' >
+                    ,question_type = :questionType
+                </#if>
+                <#if createUserId?? && createUserId != '' >
+                    ,create_user_id = :createUserId
+                </#if>
+                <#if answerAnalysis?? && answerAnalysis != '' >
+                    ,answer_analysis = :answerAnalysis
+                </#if>
+                <#if questionVideoPath?? && questionVideoPath != '' >
+                    ,question_video_path = :questionVideoPath
+                </#if>
+            WHERE ID = :id
+        ]]>
+    </sqltemplate>
+
+    <sqltemplate id="addEduQuestion">
+        <![CDATA[
+            INSERT edu_question
+            SET
+                question_type = :questionType,
+                difficulty_degree = :difficultyDegree,
+                title = :title,
+                true_answer = :trueAnswer ,
+                answer_analysis = :answerAnalysis ,
+                create_user_id = :createUserId
+
+                <#if chapterContentTitle?? && chapterContentTitle!=''>
+                    , chapter_content_title = :chapterContentTitle
+                </#if>
+
+                <#if questionBankId?? && questionBankId!=''>
+                    , question_bank_id = :questionBankId
+                </#if>
+                <#if questionVideoPath?? && questionVideoPath!=''>
+                    , question_video_path = :questionVideoPath
+                </#if>
+
+		]]>
+    </sqltemplate>
+
+    <sqltemplate id="deleteEduQuestion">
+        <![CDATA[
+            UPDATE edu_question
+             SET delete_status = 2
+            WHERE ID = :id
+        ]]>
+    </sqltemplate>
+
+    <sqltemplate id="queryEduQuestionAnswer">
+        <![CDATA[
+        SELECT
+            eqa.`id`,
+            eqa.`question_id`,
+            eqa.`option_code`,
+            eqa.`option_content`,
+            eqa.`correct_flag`,
+            eqa.`create_time`,
+            eq.title
+        FROM
+        edu_question_answer eqa
+        INNER JOIN edu_question eq ON eqa.question_id = eq.id
+        WHERE eqa.question_id = :questionId
+
+        <#if correctFlag?? && correctFlag!=''>
+            AND eqa.correct_flag = :correctFlag
+        </#if>
+
+        ]]>
+    </sqltemplate>
+
+
+    <sqltemplate id="queryCollectQuestionBankBy">
+        <![CDATA[
+			    SELECT
+                    distinct eqb.id   ,
+                    eqb.title
+
+                FROM
+                    edu_question eq
+                    INNER JOIN edu_question_bank  eqb ON eqb.id = eq.question_bank_id
+                    INNER JOIN  EDU_COLLECTION co
+                    ON  eq.id = co.reference_id
+                    AND co.collection_type = :collectionType
+                    AND co.labour_id = :labourId
+                order by eqb.id desc
+		]]>
+    </sqltemplate>
+
+    <sqltemplate id="queryCollectQuestionCountBy">
+        <![CDATA[
+			    SELECT
+                    count(eqb.id) questionCount
+                FROM
+                    edu_question eq
+                    INNER JOIN edu_question_bank  eqb ON eqb.id = eq.question_bank_id
+                    INNER JOIN  EDU_COLLECTION co
+                    ON  eq.id = co.reference_id
+                    AND co.collection_type = :collectionType
+                    AND co.labour_id = :labourId
+                where eqb.id = :questionBankId
+		]]>
+    </sqltemplate>
+
+    <sqltemplate id="queryNextOrPrevQuestionForCollect">
+        <![CDATA[
+			    SELECT
+                    eq.`id`,
+                    eq.`question_bank_id`,
+                    eq.`title`,
+                    eq.`question_type`,
+                    eq.`create_user_id`,
+                    eq.`create_time`,
+                    eq.`answer_analysis`
+                FROM
+                    edu_question eq
+                    INNER JOIN edu_question_bank  eqb ON eqb.id = eq.question_bank_id
+                    INNER JOIN  EDU_COLLECTION co ON  eq.id = co.reference_id
+                    AND co.collection_type = :collectionType
+                    AND co.labour_id = :labourId
+                where eqb.id = :questionBankId
+
+                <#if nextPrevFlag?? && nextPrevFlag=='1'>
+                    AND eq.id > :questionId
+                    order by eq.id
+                <#elseif nextPrevFlag?? && nextPrevFlag=='2'>
+                    AND eq.id < :questionId
+                    order by eq.id desc
+                </#if>
+                limit 1
+		]]>
+    </sqltemplate>
+
+    <!--查询所有题目列表数量（除了已添加）-->
+    <sqltemplate id="exceptThisQuestionsCount">
+        <![CDATA[
+             SELECT
+                count(T1.id)
+             FROM
+                edu_question T1
+             LEFT JOIN edu_question_bank T2 ON T2.id = T1.question_bank_id
+             WHERE
+                T1.id NOT IN (
+                    SELECT
+                        question_id
+                    FROM
+                        edu_exam_question_rel
+                    WHERE
+                        exam_id = :examId
+                    AND exam_type = :examType
+                )
+             <#if bankTitle?? && bankTitle != '' >
+                    AND T2.title LIKE CONCAT('%',:bankTitle,'%')
+             </#if>
+             <#if questionTitle?? && questionTitle != '' >
+                    AND T1.title LIKE CONCAT('%',:questionTitle,'%')
+             </#if>
+             <#if questionType?? && questionType != '' >
+                    AND T1.question_type = :questionType
+             </#if>
+             ORDER BY T1.id DESC
+             <#if pageOffset?? && pageOffset != '' &&  pageSize?? && pageSize !='' >
+                    LIMIT :pageOffset , :pageSize
+             </#if>
+        ]]>
+    </sqltemplate>
+
+    <!--查询所有题目列表（除了已添加）-->
+    <sqltemplate id="queryExceptThisQuestions">
+        <![CDATA[
+             SELECT
+                T2.id bankId,
+                T2.title bankTitle,
+                T1.id questionId,
+                T1.title questionTitle,
+                T1.question_type
+             FROM
+                edu_question T1
+             LEFT JOIN edu_question_bank T2 ON T2.id = T1.question_bank_id
+             WHERE
+                T1.id NOT IN (
+                    SELECT
+                        question_id
+                    FROM
+                        edu_exam_question_rel
+                    WHERE
+                        exam_id = :examId
+                    AND exam_type = :examType
+                )
+             <#if bankTitle?? && bankTitle != '' >
+                    AND T2.title LIKE CONCAT('%',:bankTitle,'%')
+             </#if>
+             <#if questionTitle?? && questionTitle != '' >
+                    AND T1.title LIKE CONCAT('%',:questionTitle,'%')
+             </#if>
+             <#if questionType?? && questionType != '' >
+                    AND T1.question_type = :questionType
+             </#if>
+             ORDER BY T1.id DESC
+             <#if pageOffset?? && pageOffset != '' &&  pageSize?? && pageSize !='' >
+                    LIMIT :pageOffset , :pageSize
+             </#if>
+        ]]>
+    </sqltemplate>
+
+    <!--培训系统PC版 - 根据课程id获取题目数量-->
+    <sqltemplate id="countQuestionByCourseIds">
+        <![CDATA[
+             SELECT
+                count(eq.id)
+            FROM
+                edu_question eq
+            LEFT JOIN edu_video_question_rel evqr ON eq.id = evqr.question_id
+            WHERE
+                evqr.chapter_content_id IN (${courseIds})
+        ]]>
+    </sqltemplate>
+
+    <!--培训系统PC版 - 根据课程id获取题目List-->
+    <sqltemplate id="queryEduQuestionByCourseIds">
+        <![CDATA[
+             SELECT
+                eq.id,
+                eq.question_bank_id,
+                eq.title,
+                eq.question_type,
+                eq.delete_status,
+                eq.difficulty_degree,
+                eq.chapter_content_title,
+                eq.true_answer,
+                eq.question_video_path,
+                eq.create_time,
+                U.ID createUserId,
+                U.REALNAME,
+                evqr.chapter_content_id,
+                eq.answer_analysis
+            FROM
+                edu_question eq
+            LEFT JOIN CT_USER U ON U.ID = EQ.CREATE_USER_ID
+            LEFT JOIN edu_video_question_rel evqr ON eq.id = evqr.question_id
+            WHERE
+                evqr.chapter_content_id IN (${courseIds})
+                AND eq.delete_status = 1
+            <#if testName?? && testName != '' >
+                   AND eq.title LIKE CONCAT('%',:testName,'%')
+            </#if>
+			<#if pageOffSet?? && pageOffSet!=''>
+                <#if pageSize?? && pageSize!=''>
+                    LIMIT :pageOffSet , :pageSize
+                </#if>
+            </#if>
+        ]]>
+    </sqltemplate>
+
+    <!--培训系统PC版 - -->
+    <sqltemplate id="queryRandomQuestion">
+        <![CDATA[
+            SELECT
+                id,
+                question_bank_id,
+                title,
+                question_type,
+                delete_status,
+                answer_analysis,
+                difficulty_degree,
+                create_user_id,
+                question_video_path,
+                create_time
+
+            FROM edu_question
+            WHERE delete_status ='1'
+            AND question_type = :questionType
+            AND difficulty_degree = :difficultyDegree
+            AND question_video_path IS NOT NULL
+            ORDER BY RAND() LIMIT :selectedNumber
+        ]]>
+    </sqltemplate>
+
+    <!--培训系统PC版 - 统计题目类型难易信息-->
+    <sqltemplate id="statisticQuestionByCourseIds">
+        <![CDATA[
+            SELECT
+                eq.difficulty_degree,
+                eq.question_type,
+                count(eq.question_type) questionAmount
+            FROM
+                edu_video_question_rel evql
+            LEFT JOIN edu_question eq ON evql.question_id = eq.id
+            WHERE
+                chapter_content_id IN (${ids})
+            GROUP BY
+                question_type,
+                difficulty_degree
+        ]]>
+    </sqltemplate>
+
+
+
+    <sqltemplate id="queryQuestionById">
+        <![CDATA[
+
+            SELECT 	id,
+                question_bank_id,
+                chapter_content_title,
+                title,
+                question_type,
+                delete_status,
+                answer_analysis,
+                difficulty_degree,
+                create_user_id,
+                question_video_path,
+                true_answer,
+                create_time,
+                update_time
+
+            FROM  EDU_QUESTION
+            where id = :questionId
+
+        ]]>
+    </sqltemplate>
+
+</sqls>

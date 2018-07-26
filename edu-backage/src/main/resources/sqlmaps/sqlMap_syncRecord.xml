@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="syncRecord">
+    <!-- ====================================== sql======================================= -->
+
+    <sqltemplate id="queryPreviousId">
+        <![CDATA[
+             SELECT
+
+                IFNULL (MAX(end_id),0) lastId
+
+            FROM SYNC_RECORD
+            WHERE SYNC_TYPE = :syncType
+		]]>
+    </sqltemplate>
+
+
+    <sqltemplate id="queryExsitBySyncType">
+        <![CDATA[
+             SELECT
+
+                count(id)
+
+            FROM SYNC_RECORD
+            WHERE SYNC_TYPE = :syncType
+		]]>
+    </sqltemplate>
+
+    <sqltemplate id="updateEndIdBySyncType">
+        <![CDATA[
+            UPDATE SYNC_RECORD
+            SET
+                END_ID = :endId
+            WHERE SYNC_TYPE = :syncType
+		]]>
+    </sqltemplate>
+
+
+
+    <sqltemplate id="saveSyncRecord">
+        <![CDATA[
+                INSERT INTO SYNC_RECORD
+                SET
+                    START_ID = :startId ,
+                    END_ID = :endId ,
+                    SYNC_TYPE = :syncType
+
+		]]>
+    </sqltemplate>
+
+</sqls>

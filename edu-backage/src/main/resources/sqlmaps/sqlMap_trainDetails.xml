@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="trainDetails">
+
+    <!--培训系统PC版-查询公司名称-->
+    <sqlTemplate id="queryCompanyName">
+        <![CDATA[
+            SELECT id companyId,company_name FROM build_company WHERE id = :companyId
+        ]]>
+    </sqlTemplate>
+
+    <!--培训系统PC版-查询单位名称-->
+    <sqlTemplate id="querySiteNames">
+        <![CDATA[
+            SELECT id siteId,site_name siteName FROM build_site WHERE company_id = :companyId
+        ]]>
+    </sqlTemplate>
+
+    <!--培训系统PC版-查询单位名称-->
+    <sqlTemplate id="queryAllUnitTrainDetailsCount">
+        <![CDATA[
+            SELECT COUNT(id) FROM build_site
+            WHERE company_id = :companyId
+            <#if siteName?? && siteName != '' >
+                AND site_name LIKE CONCAT('%',:siteName,'%')
+            </#if>
+        ]]>
+    </sqlTemplate>
+
+    <!--培训系统PC版-查询单位名称-->
+    <sqlTemplate id="queryAllUnitTrainDetails">
+        <![CDATA[
+            SELECT
+                T1.site_name,
+                (SELECT count(T2.id) FROM build_labourer T2 WHERE T2.build_site_code = T1.`code`) totalCount,
+                T1.`code` siteCode
+            FROM
+                build_site T1
+            WHERE
+                T1.company_id = :companyId
+            <#if siteName?? && siteName != '' >
+                AND T1.site_name LIKE CONCAT('%',:siteName,'%')
+            </#if>
+        ]]>
+    </sqlTemplate>
+
+    <!--培训系统PC版-查询已受训人数和参加考试人数（按时间段）-->
+    <sqlTemplate id="queryPassAndExamCount">
+        <![CDATA[
+            SELECT
+            (SELECT	COUNT(T2.id)
+            FROM
+                build_labourer T1
+            INNER JOIN edu_examlabour_rel T2 ON T2.labourer_id = T1.id
+            WHERE
+                T1.build_site_code = :siteCode
+            AND T2.exam_type = :examType
+            <#if startTime?? && startTime != '' >
+                AND DATE_FORMAT(T2.create_time,'%Y-%m-%d %H:%i:%s') >= DATE_FORMAT(:startTime, '%Y-%m-%d %H:%i:%s')
+            </#if>
+            <#if endTime?? && endTime != '' >
+                AND DATE_FORMAT(T2.create_time,'%Y-%m-%d %H:%i:%s') <= DATE_FORMAT(:endTime, '%Y-%m-%d %H:%i:%s')
+            </#if>
+            ) examCount,
+            (SELECT	COUNT(T2.id)
+            FROM
+                build_labourer T1
+            INNER JOIN edu_examlabour_rel T2 ON T2.labourer_id = T1.id
+            WHERE
+                T1.build_site_code = :siteCode
+            AND T2.exam_type = :examType
+            AND T2.pass_status = :passStatus
+            <#if startTime?? && startTime != '' >
+                AND DATE_FORMAT(T2.create_time,'%Y-%m-%d %H:%i:%s') >= DATE_FORMAT(:startTime, '%Y-%m-%d %H:%i:%s')
+            </#if>
+            <#if endTime?? && endTime != '' >
+                AND DATE_FORMAT(T2.create_time,'%Y-%m-%d %H:%i:%s') <= DATE_FORMAT(:endTime, '%Y-%m-%d %H:%i:%s')
+            </#if>
+            ) passCount
+            FROM DUAL
+        ]]>
+    </sqlTemplate>
+
+    <!--培训系统PC版-查询单个单位培训详情-->
+    <sqlTemplate id="queryOneUnitTrainDetails">
+        <![CDATA[
+            SELECT
+                T1.id siteId,
+                T1.site_name,
+                (SELECT count(T2.id) FROM build_labourer T2 WHERE T2.build_site_code = T1.`code`) totalCount,
+                T1.`code` siteCode
+            FROM
+                build_site T1
+            WHERE
+                T1.company_id = :companyId
+            <#if siteId?? && siteId != '' >
+                AND T1.id = :siteId
+            </#if>
+            <#if siteName?? && siteName != '' >
+                AND T1.site_name = :siteName
+            </#if>
+        ]]>
+    </sqlTemplate>
+
+    <!--培训系统PC版-查询单个单位培训详情-->
+    <sqlTemplate id="queryTrainLabourers">
+        <![CDATA[
+             SELECT
+                T1.id siteId,
+                T1.site_name,
+                T2.id labourerId,
+                T2.realname,
+                (SELECT count(T3.id) FROM edu_examlabour_rel T3 WHERE T3.labourer_id = T2.id AND T3.exam_type = :examType) examCount,
+                (SELECT count(T3.id) FROM edu_examlabour_rel T3 WHERE T3.labourer_id = T2.id AND T3.exam_type = :examType AND T3.pass_status = :passStatus) passCount
+            FROM
+                build_site T1
+            INNER JOIN build_labourer T2 ON T2.build_site_code = T1.`code`
+            WHERE
+                T1.id = :siteId
+            <#if labourerName?? && labourerName != '' >
+                AND T2.realname LIKE CONCAT('%',:labourerName,'%')
+            </#if>
+        ]]>
+    </sqlTemplate>
+
+    <!--培训系统PC版-查询学员培训详情-->
+    <sqlTemplate id="queryLabourerDetails">
+        <![CDATA[
+             SELECT
+                a.program_name,
+                a.startDate,
+                a.examDate,
+                b.exam_score,
+                b.pass_status,
+                a.`start`,
+                a.`end`
+             FROM (SELECT T1.program_name,
+                   DATE_FORMAT(T1.start_date,'%Y-%m-%d %H:%i') startDate,
+                   DATE_FORMAT(T1.start_date, '%H:%i') examDate,
+                  (SELECT T3.id FROM edu_exam_train T3 WHERE T1.program_id = T3.id) examId,
+                   DATE_FORMAT(T1.start_date,'%Y-%m-%d %H:%i:%s') `start`,
+                   DATE_FORMAT(T1.end_date,'%Y-%m-%d %H:%i:%s') `end`
+                   FROM
+                       edu_train_plan T1
+                   INNER JOIN edu_traplan_labour_rel T2 ON T2.train_plan_id = T1.id
+                   WHERE
+                       T2.labour_id = :labourerId
+                    ) a
+                INNER JOIN edu_examlabour_rel b ON b.exam_id = a.examId
+                WHERE
+                    b.labourer_id = :labourerId
+        ]]>
+    </sqlTemplate>
+
+</sqls>

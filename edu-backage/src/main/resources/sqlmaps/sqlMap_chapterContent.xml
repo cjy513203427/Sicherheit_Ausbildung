@@ -1,0 +1,380 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="chapterContent">
+    <!-- ====================================== sql======================================= -->
+
+    <!--查询视频内容列表（或有条件）-->
+    <sqltemplate id="queryContentList">
+        <![CDATA[
+			 SELECT
+                ecc.id,
+                ecc.edu_video_id,
+                ecc.video_chapter_id,
+                ecc.title,
+                ecc.video_path,
+                ecc.create_user_id,
+                ev.title eduVideoName,
+                evc.chapter_name videoChapterName
+            FROM
+                edu_chapter_content ecc
+            LEFT JOIN edu_video ev ON ecc.edu_video_id = ev.id
+            LEFT JOIN edu_video_chapter evc ON ecc.video_chapter_id = evc.id
+            where 1=1
+            <#if title?? && title!= '' >
+                and ecc.title LIKE CONCAT('%',:title,'%')
+            </#if>
+            <#if eduVideoName?? && eduVideoName!= '' >
+                and ev.title LIKE CONCAT('%',:eduVideoName,'%')
+            </#if>
+            <#if pageOffset?? && pageSize!= '' >
+                LIMIT :pageOffset,:pageSize
+            </#if>
+		]]>
+    </sqltemplate>
+
+    <!--查询视频内容总数（或有条件）-->
+    <sqltemplate id="countChapterContent">
+        <![CDATA[
+			 SELECT
+			 	COUNT(ecc.ID)
+			 FROM edu_chapter_content ecc
+			 LEFT JOIN edu_video ev ON ecc.edu_video_id = ev.id
+             LEFT JOIN edu_video_chapter evc ON ecc.video_chapter_id = evc.id
+			 WHERE 1=1
+			 <#if title?? && title!= '' >
+                and ecc.title LIKE CONCAT('%',:title,'%')
+             </#if>
+             <#if eduVideoName?? && eduVideoName!= '' >
+                and ev.title LIKE CONCAT('%',:eduVideoName,'%')
+             </#if>
+		]]>
+    </sqltemplate>
+
+    <!--添加视频内容信息-->
+    <sqltemplate id="addChapterContent">
+        <![CDATA[
+			 INSERT INTO  edu_chapter_content
+			 SET
+			    title = :title
+			    <#if eduVideoId?? && eduVideoId != ''>
+			        ,edu_video_id = :eduVideoId
+			    </#if>
+			    <#if videoChapterId?? && videoChapterId != ''>
+			        ,video_chapter_id = :videoChapterId
+			    </#if>
+			    <#if videoPath?? && videoPath != ''>
+			        ,video_path = :videoPath
+			    </#if>
+			    <#if createUserId?? && createUserId != ''>
+			        ,create_user_id = :createUserId
+			    </#if>
+			    <#if timeLength?? && timeLength != ''>
+			        ,time_length = :timeLength
+			    </#if>
+		]]>
+    </sqltemplate>
+
+    <!--修改章节视频-->
+    <sqltemplate id="modifyChapterContent">
+        <![CDATA[
+			 UPDATE  edu_chapter_content
+			 SET
+			    id = :id
+			    <#if title?? && title != ''>
+			        ,title = :title
+			    </#if>
+			    <#if eduVideoId?? && eduVideoId != ''>
+			        ,edu_video_id = :eduVideoId
+			    </#if>
+			    <#if videoPath?? && videoPath != ''>
+			        ,video_path = :videoPath
+			    </#if>
+			    where id = :id
+		]]>
+    </sqltemplate>
+
+    <!--根据章节id查询视频内容-->
+    <sqltemplate id="queryContentListByChapterId">
+        <![CDATA[
+			SELECT
+                ecc.id,
+                ecc.edu_video_id,
+                ecc.video_chapter_id,
+                ecc.title,
+                ecc.video_path,
+                ecc.time_length,
+                ecc.create_user_id,
+                ecc.create_time,
+                evr.play_progress,
+                evr.play_status,
+                case evr.play_status WHEN 1 THEN 100 ELSE round((IFNULL(evr.play_progress,0)/ecc.time_length)*100,0) END timeRatio
+            FROM
+                edu_chapter_content ecc
+            LEFT JOIN edu_videolabour_rel evr ON ecc.id = evr.chapter_content_id AND evr.labour_id = :labourerId
+            WHERE
+                ecc.video_chapter_id = :chapterId
+		]]>
+    </sqltemplate>
+
+    <!--根据集锦id查询视频内容-->
+    <sqltemplate id="queryContentListBycollectionId">
+        <![CDATA[
+			SELECT
+                ecc.id,
+                ecc.edu_video_id,
+                ecc.video_chapter_id,
+                ecc.title,
+                ecc.video_path,
+                ecc.time_length,
+                ecc.create_user_id,
+                ecc.create_time,
+                evr.play_progress,
+                evr.play_status,
+                case evr.play_status WHEN 1 THEN 100 ELSE round((IFNULL(evr.play_progress,0)/ecc.time_length)*100,0) END timeRatio
+            FROM
+                edu_chapter_content ecc
+            LEFT JOIN edu_videolabour_rel evr ON ecc.id = evr.chapter_content_id AND evr.labour_id = :labourerId
+            WHERE
+                ecc.edu_video_id = :collectionId
+		]]>
+    </sqltemplate>
+
+    <!--根据人员id和章节节点内容id获取观看记录-->
+    <sqltemplate id="queryVideoLabourRelByLabourIdAndContentId">
+        <![CDATA[
+			SELECT
+                evr.id,
+                evr.labour_id,
+                evr.chapter_content_id,
+                evr.play_progress,
+                evr.video_id ,
+                evr.play_status,
+                ecc.time_length,
+                DATE_FORMAT(evr.create_time,'%Y-%m-%d %H:%i:%s') createTime ,
+                DATE_FORMAT(evr.update_time,'%Y-%m-%d %H:%i:%s') updateTime
+            FROM
+               	edu_videolabour_rel evr LEFT JOIN edu_chapter_content ecc ON evr.chapter_content_id = ecc.id
+            WHERE
+                evr.labour_id = :labourId
+            and evr.chapter_content_id = :chapterContentId
+		]]>
+    </sqltemplate>
+
+    <!--添加视频观看记录-->
+    <sqltemplate id="markWatchVideo">
+        <![CDATA[
+			insert into edu_videolabour_rel set
+                labour_id = :labourId,
+                chapter_content_id = :chapterContentId,
+                play_progress = :playProgress,
+                video_id = :videoId ,
+                play_status = :playStatus
+		]]>
+    </sqltemplate>
+
+    <!--更新观看记录-->
+    <sqltemplate id="updateWatchMark">
+        <![CDATA[
+			update edu_videolabour_rel set
+			    <#if playProgress?? && playProgress != ''>
+			        play_progress = :playProgress ,
+			    </#if>
+                play_status = :playStatus
+            WHERE
+                chapter_content_id = :chapterContentId
+            AND labour_id = :labourId
+		]]>
+    </sqltemplate>
+
+    <!--根据章节视频id查询章节节点视频信息-->
+    <sqltemplate id="queryContentByContentId">
+        <![CDATA[
+			SELECT
+                id,
+                edu_video_id,
+                video_chapter_id,
+                title,
+                video_path,
+                time_length,
+                create_user_id,
+                create_time
+            FROM
+                edu_chapter_content
+            WHERE
+                id IN (${chapterContentId})
+		]]>
+    </sqltemplate>
+
+    <!--删除视频内容-->
+    <sqltemplate id="deleteContent">
+        <![CDATA[
+			DELETE FROM edu_chapter_content
+            WHERE ID IN (${ids})
+		]]> 
+    </sqltemplate>
+
+    <!--根据集锦id查询全部视频名称及id-->
+    <sqltemplate id="queryAllContentNameAndId">
+        <![CDATA[
+			SELECT
+                id,
+                edu_video_id,
+                title
+            FROM
+                edu_chapter_content
+            WHERE
+                edu_video_id = :videoId
+		]]>
+    </sqltemplate>
+
+    <!--管理后台 - 根据视频ID查询视频详情-->
+    <sqltemplate id="queryContentByCourseIds">
+        <![CDATA[
+			SELECT
+                id,
+                edu_video_id,
+                video_chapter_id,
+                (
+                    SELECT
+                        title
+                    FROM
+                        edu_video
+                    WHERE
+                        id = ecc.edu_video_id
+                ) eduVideoName,
+                title,
+                video_path,
+                time_length,
+                create_user_id,
+                create_time
+            FROM
+                edu_chapter_content AS ecc
+            WHERE
+                id IN (${ids})
+		]]>
+    </sqltemplate>
+
+    <!--培训系统PC端 - 根据方案ID和集锦ID查询视频内容-->
+    <sqltemplate id="queryContentByProgramId">
+        <![CDATA[
+			SELECT
+                c.id,
+                c.edu_video_id,
+                c.video_chapter_id,
+                c.title,
+                c.video_path,
+                c.time_length,
+                c.create_user_id,
+                ev.title eduVideoName,
+                DATE_FORMAT(c.create_time,'%Y-%m-%d %H:%i:%s') createTime
+            FROM
+                edu_chapter_content c
+            LEFT JOIN edu_train_lesson_rel l ON c.id = l.chapter_content_id
+            LEFT JOIN edu_video ev ON c.edu_video_id = ev.id
+            WHERE
+            <#if id?? && id != ''>
+		        c.edu_video_id = :id and
+		    </#if>
+            l.train_program_id = :programId
+		]]>
+    </sqltemplate>
+
+    <!--培训系统PC版 - 查询视频内容及试题概况-->
+    <sqltemplate id="queryContentByVideoId">
+        <![CDATA[
+			SELECT
+                t.id,
+                t.title,
+                t.time_length,
+                t.video_path,
+                ( SELECT count( id ) FROM edu_video_question_rel WHERE chapter_content_id = t.id ) testCount
+            FROM
+                edu_chapter_content t
+            WHERE
+                t.edu_video_id = :catalogId
+            <#if videoName?? && videoName != ''>
+		        and t.title LIKE CONCAT('%',:videoName,'%')
+		    </#if>
+		]]>
+    </sqltemplate>
+
+    <!--管理后台 - 保存视频内容与题目的关系-->
+    <sqltemplate id="saveVideoQuestionRel">
+        <![CDATA[
+			INSERT
+            INTO
+                edu_video_question_rel
+                (
+                    chapter_content_id,
+                    question_id
+                )
+                VALUES
+                (
+                    :courseId,
+                    :questionId
+                );
+		]]>
+    </sqltemplate>
+
+
+    <sqltemplate id="queryNextChapterContentById">
+        <![CDATA[
+			 SELECT
+			        id,
+                    edu_video_id,
+                    video_chapter_id,
+                    title,
+                    video_path,
+                    time_length,
+                    create_user_id,
+                    create_time
+
+             FROM EDU_CHAPTER_CONTENT
+             WHERE id > :chapterContentId
+             order by id
+             limit 1
+
+		]]>
+    </sqltemplate>
+
+
+    <sqltemplate id="queryNextQuestionRelById">
+        <![CDATA[
+
+			 SELECT
+			        ID,
+                    CHAPTER_CONTENT_ID,
+                    QUESTION_ID
+
+             FROM EDU_VIDEO_QUESTION_REL
+             WHERE id > :relId
+             order by id
+             limit 1
+
+		]]>
+    </sqltemplate>
+
+
+
+
+    <sqltemplate id="queryChapterContentByTitle">
+        <![CDATA[
+
+			  SELECT
+			        id,
+                    edu_video_id,
+                    video_chapter_id,
+                    title,
+                    video_path,
+                    time_length,
+                    create_user_id,
+                    create_time
+
+              FROM  EDU_CHAPTER_CONTENT
+              where title = :title
+              limit 1
+
+
+		]]>
+    </sqltemplate>
+
+</sqls>

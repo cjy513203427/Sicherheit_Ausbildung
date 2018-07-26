@@ -1,0 +1,32 @@
+Ext.define('Admin.model.buildLabourer.BuildLabourer', {
+    extend: 'Admin.model.Base',
+    idProperty: 'id',
+    fields: [
+        {name: 'id', type: 'int'},
+        {name: 'buildSiteCode', type: 'string'},
+        {name: 'realname', type: 'string'},
+        {name: 'idCard', type: 'string'},
+        {name: 'sex', type: 'string'},
+        {name: 'address', type: 'string'},
+        {name: 'phone', type: 'string'},
+        {name: 'password', type: 'string'},
+        {name: 'openId', type: 'string'},
+        {name: 'postType', type: 'string'},
+        {name: 'leaderName', type: 'string'},
+        {name: 'leaderPhone', type: 'string'},
+        {name: 'cumulativeDay', type: 'int'},
+        {name: 'status', type: 'string'},
+        {name: 'createUserId', type: 'int'},
+        {name: 'createUserName', type: 'string'},
+        {name: 'createTime', type: 'string'},
+        {name: 'updateTime', type: 'string'},
+        {name: 'accountNumber', type: 'int'},
+        {name: 'siteStatus', type: 'string'},
+        {name: 'nation', type: 'string'},
+        {name: 'birthday', type: 'string'},
+        {name: 'idIssued', type: 'string'},
+        {name: 'issuedDate', type: 'string'},
+        {name: 'validDate', type: 'string'},
+        {name: 'base64Photo', type: 'string'}
+    ]
+});

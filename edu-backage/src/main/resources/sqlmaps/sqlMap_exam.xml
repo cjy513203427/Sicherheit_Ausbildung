@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="exam">
+    <!-- ====================================== sql======================================= -->
+
+    <!--查询模拟考试列表（或有条件）-->
+    <sqltemplate id="queryExamMockList">
+        <![CDATA[
+               SELECT
+                   id,
+                   exam_name,
+                   question_number,
+                   total_score,
+                   pass_score,
+                   consume_minute,
+                   post_type,
+                   DATE_FORMAT(create_time,'%Y-%m-%d %H:%i:%s') createTime,
+                   create_user_id
+               FROM
+                    edu_exam_mock
+               WHERE 1=1
+               <#if examName?? && examName != '' >
+                        AND exam_name LIKE CONCAT('%',:examName,'%')
+               </#if>
+               <#if postType?? && postType != '' >
+                        AND exam_name = :postType
+               </#if>
+               <#if createTime?? && createTime != '' >
+                        AND DATE_FORMAT(create_time, '%Y-%m-%d') = :createTime
+               </#if>
+               ORDER BY ID DESC
+               <#if pageOffset?? && pageOffset != '' &&  pageSize?? && pageSize !='' >
+                        LIMIT :pageOffset , :pageSize
+               </#if>
+		]]>
+    </sqltemplate>
+
+    <!--查询模拟考试列表数量（或有条件）-->
+    <sqltemplate id="queryExamMockListCount">
+        <![CDATA[
+			 SELECT
+                count(id)
+             FROM
+                edu_exam_mock
+			 WHERE 1=1
+			 <#if examName?? && examName != '' >
+                      AND exam_name LIKE CONCAT('%',:examName,'%')
+             </#if>
+             <#if postType?? && postType != '' >
+                      AND exam_name = :postType
+             </#if>
+             <#if createTime?? && createTime != '' >
+                      AND DATE_FORMAT(create_time, '%Y-%m-%d') = :createTime
+             </#if>
+		]]>
+    </sqltemplate>
+
+    <!--添加模拟试卷-->
+    <sqltemplate id="createExamMock">
+        <![CDATA[
+            INSERT INTO edu_exam_mock (
+            exam_name,
+            question_number,
+            total_score,
+            pass_score,
+            consume_minute,
+            post_type,
+            create_user_id
+        )
+        VALUES
+            (
+                :examName,
+                :questionNumber,
+                :totalScore,
+                :passScore,
+                :consumeMinute,
+                :postType,
+                :createUserId
+            )
+		]]>
+    </sqltemplate>
+
+    <!--添加试卷题目（模拟，正式）-->
+    <sqltemplate id="addMockQuestions">
+        <![CDATA[
+            INSERT INTO edu_exam_question_rel (
+                exam_id,
+                exam_type,
+                question_id,
+                question_score
+            )
+            VALUES
+            <#list questionRelList as question>
+            (
+                :examId,
+                :examType,
+                '${question.questionId}',
+
+                <#if question.questionScore?? && question.questionScore != '' >
+                    '${question.questionScore}'
+                <#else>
+                    null
+                </#if>
+            )
+            <#if question_has_next>,</#if>
+            </#list>
+		]]>
+    </sqltemplate>
+
+    <!--删除模拟试卷-->
+    <sqltemplate id="deleteExamMock">
+        <![CDATA[
+            DELETE
+            FROM
+                edu_exam_mock
+            WHERE
+                id = :id
+		]]>
+    </sqltemplate>
+
+    <!--删除题目（根据试卷id，类型）-->
+    <sqltemplate id="deleteMockQuestion">
+        <![CDATA[
+             DELETE
+             FROM
+                 edu_exam_question_rel
+             WHERE
+                 exam_id = :examId
+             AND exam_type = :examType
+		]]>
+    </sqltemplate>
+
+    <!--删除试卷的题目（模拟 正式）-->
+    <sqltemplate id="deleteMockDownQuestion">
+        <![CDATA[
+             DELETE
+             FROM
+                 edu_exam_question_rel
+             WHERE
+                 exam_id = :examId
+                 AND exam_type = :examType
+                 AND question_id IN (${idsStr})
+            ]]>
+    </sqltemplate>
+
+    <!--查询当前模拟试卷的题目列表-->
+    <sqltemplate id="queryThisMockQuestions">
+        <![CDATA[
+             SELECT
+                T3.id bankId,
+                T3.title bankTitle,
+                T2.id questionId,
+                T2.title questionTitle,
+                T2.question_type,
+                DATE_FORMAT(T1.create_time,'%Y-%m-%d %H:%i:%s') createTime
+             FROM
+                edu_exam_question_rel T1
+             LEFT JOIN edu_question T2 ON T2.id = T1.question_id
+             LEFT JOIN edu_question_bank T3 ON T3.id = T2.question_bank_id
+             WHERE
+                T1.exam_id = ${examMock.id}
+            AND T1.exam_type = :examType
+            <#if bankTitle?? && bankTitle != '' >
+                AND T3.title LIKE CONCAT('%',:bankTitle,'%')
+            </#if>
+            <#if questionTitle?? && questionTitle != '' >
+                AND T2.title LIKE CONCAT('%',:questionTitle,'%')
+            </#if>
+            <#if examMock.questionType?? && examMock.questionType != '' >
+                AND T2.question_type = :questionType
+            </#if>
+        ]]>
+    </sqltemplate>
+
+    <!--查询模拟考试详情-->
+    <sqltemplate id="queryExamMockById">
+        <![CDATA[
+               SELECT
+                   id,
+                   exam_name,
+                   question_number,
+                   total_score,
+                   pass_score,
+                   consume_minute,
+                   post_type,
+                   DATE_FORMAT(create_time,'%Y-%m-%d %H:%i:%s') createTime,
+                   create_user_id
+               FROM
+                    edu_exam_mock
+               WHERE id = :examId
+		]]>
+    </sqltemplate>
+
+    <!--查询模拟考试共有多少到题-->
+    <sqltemplate id="queryQuestionCount">
+        <![CDATA[
+               SELECT
+                   count(id)
+               FROM  edu_exam_question_rel
+               WHERE exam_id = :examId
+               AND exam_type = :examType
+		]]>
+    </sqltemplate>
+
+    <!--修改模拟试卷-->
+    <sqltemplate id="updateExamMock">
+        <![CDATA[
+            UPDATE edu_exam_mock
+            SET exam_name = :examName,
+            question_number = :questionNumber,
+            total_score = :totalScore,
+            consume_minute = :consumeMinute,
+            post_type = :postType,
+            pass_score = :passScore
+            WHERE
+                id = :id
+		]]>
+    </sqltemplate>
+
+    <!--查询本次计划需要交卷的人-->
+    <sqltemplate id="queryThisTrainLabourers">
+        <![CDATA[
+            SELECT
+                id,
+                answer_tool_num,
+                labour_id,
+                train_plan_id planId,
+                train_program_id programId,
+                train_exam_id examId,
+                create_time,
+                update_time
+            FROM
+                edu_answertool_rel
+            WHERE
+                train_plan_id = :planId
+		]]>
+    </sqltemplate>
+
+    <!--根据人员id和试卷id统计正确的题数-->
+    <sqltemplate id="queryTrueCount">
+        <![CDATA[
+            SELECT count(id) FROM edu_exam_answercard
+            WHERE exam_id = :examId AND exam_type = :examType AND labour_id = :labourId AND answer_status = :answerStatus
+		]]>
+    </sqltemplate>
+</sqls>

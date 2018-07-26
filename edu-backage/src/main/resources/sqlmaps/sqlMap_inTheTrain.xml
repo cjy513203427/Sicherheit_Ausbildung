@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="inTheTrain">
+    <!-- ====================================== sql======================================= -->
+
+    <!--培训系统PC版-查询培训方案列表-->
+    <sqltemplate id="queryEduProgramList">
+        <![CDATA[
+            SELECT
+                T1.id programId,
+                T1.program_name,
+                T1.program_type,
+                T3.time_length,
+                T1.cover_path
+            FROM
+                edu_train_program T1
+            INNER JOIN edu_train_lesson_rel T2 ON T2.train_program_id = T1.id
+            INNER JOIN edu_chapter_content T3 ON T3.edu_video_id = T2.video_id
+            WHERE
+                T1.company_id = :companyId
+		]]>
+    </sqltemplate>
+
+    <!--培训系统PC版-查询进行中的培训计划列表-->
+    <sqltemplate id="queryRunningPlanList">
+        <![CDATA[
+            SELECT
+                T2.id planId,
+                T2.plan_name,
+                T2.program_id,
+                T2.program_name,
+                T1.program_type,
+                T2.start_date,
+                T2.end_date,
+                T4.time_length,
+                T1.cover_path,
+                (SELECT COUNT(T5.id)FROM edu_traplan_labour_rel T5 WHERE T5.train_plan_id = T2.id) trainCount
+            FROM
+                edu_train_program T1
+            INNER JOIN edu_train_plan T2 ON T2.program_id = T1.id
+            INNER JOIN edu_train_lesson_rel T3 ON T3.train_program_id = T1.id
+            INNER JOIN edu_chapter_content T4 ON T4.edu_video_id = T3.video_id
+            WHERE
+                T1.company_id = :companyId
+            AND DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s') >= DATE_FORMAT(T2.start_date,'%Y-%m-%d %H:%i:%s')
+            AND DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s') <= DATE_FORMAT(T2.end_date,'%Y-%m-%d %H:%i:%s')
+		]]>
+    </sqltemplate>
+
+    <!--培训系统PC版-查询考试题目（视频题目）-->
+    <sqltemplate id="queryTestQuestion">
+        <![CDATA[
+            SELECT
+                T3.id questionId,
+                T3.question_video_path questionVideoPath,
+                (SELECT T4.question_play_times FROM edu_train_plan T4 WHERE T4.program_id = :programId AND T4.id =:planId) playTimes,
+                (SELECT COUNT(id) FROM edu_exam_question_rel a WHERE a.exam_id = T1.id) totalCount
+            FROM
+                edu_exam_train T1
+            INNER JOIN edu_exam_question_rel T2 ON T2.exam_id = T1.id
+            INNER JOIN edu_question T3 ON T3.id = T2.question_id
+            WHERE
+                T1.train_program_id = :programId
+            <#if questionId?? && questionId != '' >
+                AND T3.id > :questionId
+            </#if>
+            LIMIT 1
+		]]>
+    </sqltemplate>
+
+
+    <!-- 保存人员和答题器编号的对应关系-->
+    <sqltemplate id="saveAnswertoolRel">
+        <![CDATA[
+
+                INSERT INTO EDU_ANSWERTOOL_REL
+                    (
+                        answer_tool_num,
+                        labour_id,
+                        train_plan_id,
+                        train_program_id,
+                        train_exam_id
+                    )
+                    VALUES
+
+                <#list answertoolRelList as item >
+                    (
+                        '${item.answerToolNum}',
+                        '${item.labourId}',
+                        '${item.trainPlanId}',
+                        '${item.trainProgramId}',
+                        '${item.trainExamId}'
+                    )
+                    <#if item_has_next>,</#if>
+                </#list>
+
+		]]>
+    </sqltemplate>
+
+
+    <sqltemplate id="deleteAnswerToolRel">
+        <![CDATA[
+
+                 DELETE FROM EDU_ANSWERTOOL_REL
+	                WHERE train_plan_id = :planId
+
+		]]>
+    </sqltemplate>
+
+
+    <sqltemplate id="queryLabourIdByToolNumAndPlanId">
+        <![CDATA[
+
+                select
+                    labour_id
+                FROM EDU_ANSWERTOOL_REL
+                WHERE answer_tool_num = :answerToolNum
+                AND train_plan_id = :planId
+
+		]]>
+    </sqltemplate>
+
+</sqls>

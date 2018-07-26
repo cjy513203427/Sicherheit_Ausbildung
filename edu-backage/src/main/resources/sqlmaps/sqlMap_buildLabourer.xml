@@ -1,0 +1,752 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="buildLabourer">
+    <!-- ====================================== sql======================================= -->
+
+    <!--建筑工地人员信息查询（或有条件）-->
+    <sqltemplate id="queryBuildLabourer">
+        <![CDATA[
+               SELECT
+                    id,
+                    build_site_code,
+                    realname,
+                    id_card,
+                    sex,
+                    address,
+                    phone,
+                    `password`,
+                    openId,
+                    post_type,
+                    leader_name,
+                    leader_phone,
+                    cumulative_day,
+                    `status`,
+                    create_user_id,
+                    nation,
+                    birthday,
+                    Id_issued,
+                    issued_date,
+                    valid_date,
+                    base_64_photo base64Photo,
+                    (SELECT cu.realname FROM ct_user cu WHERE cu.id = b1.create_user_id) createUserName,
+                    DATE_FORMAT(create_time,'%Y-%m-%d %H:%i:%s') createTime,
+                    DATE_FORMAT(update_time,'%Y-%m-%d %H:%i:%s') updateTime,
+                    (SELECT b2.account_number FROM build_site b2 WHERE b2.`code` = b1.build_site_code) accountNumber,
+	                (SELECT b2.`status` FROM build_site b2 WHERE b2.`code` = b1.build_site_code) siteStatus
+               FROM
+                    build_labourer b1
+               WHERE 1=1
+               <#if buildSiteCode?? && buildSiteCode != '' >
+                        AND build_site_code LIKE CONCAT('%',:buildSiteCode,'%')
+               </#if>
+               <#if roleCode?? && roleCode != '' >
+                        AND build_site_code = :roleCode
+               </#if>
+               <#if phone?? && phone != '' >
+                        AND phone LIKE CONCAT('%',:phone,'%')
+               </#if>
+               <#if realname?? && realname != '' >
+                        AND realname LIKE CONCAT('%',:realname,'%')
+               </#if>
+               <#if idCard?? && idCard != '' >
+                        AND id_card LIKE CONCAT('%',:idCard,'%')
+               </#if>
+               <#if sex?? && sex != '' >
+                        AND sex = :sex
+               </#if>
+               <#if postType?? && postType != '' >
+                        AND post_type = :postType
+               </#if>
+               <#if createTime?? && createTime != '' >
+                        AND DATE_FORMAT(create_time, '%Y-%m-%d') = :createTime
+               </#if>
+               <#if status?? && status != '' >
+                        AND `status`=:status
+               </#if>
+               ORDER BY ID DESC
+               <#if pageOffset?? && pageOffset != '' &&  pageSize?? && pageSize !='' >
+                        LIMIT :pageOffset , :pageSize
+               </#if>
+		]]>
+    </sqltemplate>
+
+    <!--建筑工地人员信息数量查询（或有条件）-->
+    <sqltemplate id="queryBuildLabourerCount">
+        <![CDATA[
+			 SELECT
+                 COUNT(id)
+             FROM
+                 build_labourer
+             WHERE 1=1
+             <#if buildSiteCode?? && buildSiteCode != '' >
+                     AND build_site_code LIKE CONCAT('%',:buildSiteCode,'%')
+             </#if>
+             <#if roleCode?? && roleCode != '' >
+                        AND build_site_code = :roleCode
+               </#if>
+             <#if phone?? && phone != '' >
+                     AND phone LIKE CONCAT('%',:phone,'%')
+             </#if>
+             <#if realname?? && realname != '' >
+                     AND realname LIKE CONCAT('%',:realname,'%')
+             </#if>
+             <#if idCard?? && idCard != '' >
+                     AND id_card LIKE CONCAT('%',:idCard,'%')
+             </#if>
+             <#if sex?? && sex != '' >
+                     AND sex = :sex
+             </#if>
+             <#if postType?? && postType != '' >
+                     AND post_type = :postType
+             </#if>
+             <#if createTime?? && createTime != '' >
+                     AND DATE_FORMAT(create_time, '%Y-%m-%d') = :createTime
+             </#if>
+             <#if status?? && status != '' >
+                     AND `status`=:status
+             </#if>
+		]]>
+    </sqltemplate>
+
+    <!--人员启用禁用-->
+    <sqltemplate id="enOrDisBuildLabourer">
+        <![CDATA[
+			 UPDATE build_labourer
+             SET `status` = :status
+             WHERE
+                 id = :id
+		]]>
+    </sqltemplate>
+
+
+    <!--新增建筑工地人员-->
+    <sqltemplate id="createBuildLabourer">
+        <![CDATA[
+            INSERT INTO build_labourer (
+                build_site_code,
+                realname,
+                id_card,
+                sex,
+                address,
+                phone,
+                `password`,
+                openId,
+                post_type,
+                leader_name,
+                leader_phone,
+                cumulative_day,
+                `status`,
+                create_user_id,
+                nation,
+                birthday,
+                Id_issued,
+                issued_date,
+                valid_date,
+                base_64_photo,
+                create_time
+            )
+            VALUES
+                (
+                    :buildSiteCode,
+                    :realname,
+                    :idCard,
+                    :sex,
+                    :address,
+                    :phone,
+                    :password,
+                    NULL,
+                    :postType,
+                    :leaderName,
+                    :leaderPhone,
+                    NULL,
+                    :status,
+                    :createUserId,
+                    :nation,
+                    :birthday,
+                    :idIssued,
+                    :issuedDate,
+                    :validDate,
+                    :base64Photo,
+                   NOW()
+                );
+		]]>
+    </sqltemplate>
+
+    <!--修改建筑工地人员-->
+    <sqltemplate id="updateBuildLabourer">
+        <![CDATA[
+            UPDATE build_labourer
+            SET
+                UPDATE_TIME = CURRENT_TIMESTAMP
+
+                <#if buildSiteCode?? && buildSiteCode != '' >
+                    , BUILD_SITE_CODE = :buildSiteCode
+                </#if>
+
+                <#if realname?? && realname != '' >
+                    , REALNAME = :realname
+                </#if>
+
+                <#if idCard?? && idCard != '' >
+                    , ID_CARD = :idCard
+                </#if>
+
+                <#if sex?? && sex != '' >
+                    , SEX = :sex
+                </#if>
+
+                <#if address?? && address != '' >
+                    , ADDRESS = :address
+                </#if>
+
+                <#if phone?? && phone != '' >
+                    , PHONE = :phone
+                </#if>
+
+                <#if postType?? && postType != '' >
+                    , POST_TYPE = :postType
+                </#if>
+
+                <#if leaderName?? && leaderName != '' >
+                    , LEADER_NAME = :leaderName
+                </#if>
+
+                <#if leaderPhone?? && leaderPhone != '' >
+                    , LEADER_PHONE = :leaderPhone
+                </#if>
+                <#if nation?? && nation != '' >
+                    , nation = :nation
+                </#if>
+                <#if birthday?? && birthday != '' >
+                    , birthday = :birthday
+                </#if>
+                <#if idIssued?? && idIssued != '' >
+                    , Id_issued = :idIssued
+                </#if>
+                <#if issuedDate?? && issuedDate != '' >
+                    , issued_date = :issuedDate
+                </#if>
+                <#if validDate?? && validDate != '' >
+                    , valid_date = :validDate
+                </#if>
+                <#if base64Photo?? && base64Photo != '' >
+                    , base_64_photo = :base64Photo
+                </#if>
+            WHERE ID = :id
+        ]]>
+    </sqltemplate>
+
+    <!--修改密码-->
+    <sqltemplate id="updateLabourerPsw">
+        <![CDATA[
+            UPDATE build_labourer
+            SET `password` = :password
+            WHERE
+                id = :id
+        ]]>
+    </sqltemplate>
+
+    <!--手机端个人资料-->
+    <sqltemplate id="queryLabourerOne">
+        <![CDATA[
+            SELECT
+                id,
+                build_company_id,
+                build_site_code,
+                realname,
+                id_card,
+                sex,
+                address,
+                phone,
+                `password`,
+                openId,
+                post_type,
+                leader_name,
+                leader_phone,
+                cumulative_day,
+                `status`,
+                create_user_id,
+                DATE_FORMAT(create_time,'%Y-%m-%d %H:%i:%s') createTime,
+                DATE_FORMAT(update_time,'%Y-%m-%d %H:%i:%s') updateTime
+            FROM
+                build_labourer
+            WHERE 1 = 1
+            <#if id?? && id != '' >
+                AND id = :id
+            </#if>
+            <#if phone?? && phone != '' >
+                AND phone = :phone
+            </#if>
+
+            limit 0 ,1
+        ]]>
+    </sqltemplate>
+
+    <!--已经开通账号数量-->
+    <sqltemplate id="getHasedNumber">
+        <![CDATA[
+            SELECT count(id) FROM build_labourer WHERE build_site_code = :code AND `status` = :status
+        ]]>
+    </sqltemplate>
+
+    <!--获取个人中心信息-->
+    <sqltemplate id="getPersonalCenter">
+        <![CDATA[
+        SELECT
+            bl.id,
+            bl.cumulative_day,
+            bl.realname,
+            bl.base_64_photo base64Photo,
+            (SELECT COUNT(1) FROM edu_examlabour_rel WHERE pass_status = 1 AND labourer_id = bl.id)passCount,
+            (SELECT COUNT(1) FROM edu_notice en WHERE `status` = 1 AND labour_id = bl.id)noticeCount
+        FROM  build_labourer bl
+        WHERE bl.id =  :labourId
+        ]]>
+    </sqltemplate>
+
+    <sqltemplate id = "queryTrainee">
+        <![CDATA[
+            SELECT
+                id,
+                build_site_code,
+                realname,
+                sex,
+                id_card,
+                nation,
+                create_time
+            FROM
+            build_labourer
+            WHERE 1=1
+            AND build_company_id = :buildCompanyId
+            <#if buildSiteCode?? && buildSiteCode != '' >
+                AND build_site_code = :buildSiteCode
+            </#if>
+            <#if idCard?? && idCard != '' >
+                AND id_card LIKE CONCAT('%',:idCard,'%')
+            </#if>
+            <#if realname?? && realname != '' >
+                AND realname LIKE CONCAT('%',:realname,'%')
+            </#if>
+            <#if workType?? && workType != '' >
+                AND work_type LIKE CONCAT('%',:workType,'%')
+            </#if>
+            <#if startTime?? && startTime!=''>
+                AND create_time >= CONCAT(:startTime,'23:59:59')
+            </#if>
+            <#if endTime?? && endTime!=''>
+                AND create_time <=CONCAT(:endTime,'00:00:00')
+            </#if>
+            <#if status?? && status!=''>
+                AND status = :status
+            </#if>
+     ]]>
+    </sqltemplate>
+
+    <sqltemplate id = "countQueryTrainee">
+        <![CDATA[
+            SELECT
+                COUNT(1)
+            FROM
+            build_labourer
+            WHERE 1=1
+            AND build_company_id = :buildCompanyId
+            <#if buildSiteCode?? && buildSiteCode != '' >
+                AND build_site_code = :buildSiteCode
+            </#if>
+            <#if idCard?? && idCard != '' >
+                AND id_card LIKE CONCAT('%',:idCard,'%')
+            </#if>
+            <#if realname?? && realname != '' >
+                AND realname LIKE CONCAT('%',:realname,'%')
+            </#if>
+            <#if workType?? && workType != '' >
+                AND work_type LIKE CONCAT('%',:workType,'%')
+            </#if>
+            <#if startTime?? && startTime!=''>
+                AND create_time >= CONCAT(:startTime,'23:59:59')
+            </#if>
+            <#if endTime?? && endTime!=''>
+                AND create_time <=CONCAT(:endTime,'00:00:00')
+            </#if>
+            <#if status?? && status!=''>
+                AND status = :status
+            </#if>
+     ]]>
+    </sqltemplate>
+    <!--批量转移，从子公司转移到另外一个子公司-->
+    <sqltemplate id = "batchTransferBuildLabour">
+        <![CDATA[
+            UPDATE build_labourer SET
+                build_site_code = :buildSiteCode
+            WHERE id IN
+            (
+            <#list ids as num>
+                 ${num}
+             <#if num_has_next>,</#if>
+             </#list>
+             )
+        ]]>
+    </sqltemplate>
+    <!--删除工人，禁用，离场-->
+    <sqltemplate id = "disableBuildLabourer">
+    <![CDATA[
+        UPDATE build_labourer SET
+            status = 0
+        WHERE id IN
+        (
+        <#list ids as num>
+             ${num}
+         <#if num_has_next>,</#if>
+         </#list>
+         )
+    ]]>
+    </sqltemplate>
+
+    <!--根据集团ID查询子公司-->
+    <sqltemplate id = "queryBuildSiteByCompanyId">
+        <![CDATA[
+            SELECT
+                id,
+                site_name,
+                code,
+                company_id
+            FROM
+                build_site
+            WHERE
+                `status` = 1
+            AND company_id = :companyId
+        ]]>
+    </sqltemplate>
+
+    <!--查询人员以供选择-->
+    <sqltemplate id = "queryLabourerForSelect">
+        <![CDATA[
+            SELECT
+                id,
+                realname,
+                build_company_id,
+                build_site_code,
+                id_card,
+                sex,
+                DATE_FORMAT(create_time,'%Y-%m-%d %H:%i:%s') createTime,
+                post_type,
+                work_type
+            FROM
+            build_labourer
+            WHERE status = 1
+            <#if buildSiteCode?? && buildSiteCode != '' >
+                AND build_site_code = :buildSiteCode
+            </#if>
+            <#if workType?? && workType != '' >
+                AND work_type = :workType
+            </#if>
+            <#if postType?? && postType != '' >
+                AND post_type = :postType
+            </#if>
+            <#if startTime?? && startTime!=''>
+                AND create_time >= CONCAT(:startTime,'23:59:59')
+            </#if>
+            <#if endTime?? && endTime!=''>
+                AND create_time <=CONCAT(:endTime,'00:00:00')
+            </#if>
+        ]]>
+    </sqltemplate>
+
+    <!--批量导入工人-->
+    <sqltemplate id="batchImportBuildLabourer">
+    <![CDATA[
+        INSERT INTO build_labourer
+        (
+            realname,
+            sex,
+            id_card,
+            work_type,
+            nation,
+            address,
+            phone ,
+            finger1_base64,
+            build_company_id ,
+            build_site_code
+        )
+
+        VALUES
+        <#list buildLabourerList as item >
+            (
+                '${item.realname}',
+                '${item.sex}',
+                '${item.idCard}',
+                '${item.workType}',
+                '${item.nation}',
+                '${item.address}',
+                '${item.phone}',
+
+                <#if item.finger1Base64?? && item.finger1Base64!=''>
+                    '${item.finger1Base64}' ,
+                <#else>
+                    null ,
+                </#if>
+
+                '${item.buildCompanyId}' ,
+                '${item.buildSiteCode}'
+
+            )
+        <#if item_has_next>,</#if>
+        </#list>
+    ]]>
+    </sqltemplate>
+    <!--新增学员基本信息-->
+    <sqltemplate id="addSingleBuildLabourer">
+        <![CDATA[
+            INSERT build_labourer
+            SET realname = :realname
+            <#if sex?? && sex != '' >
+                , sex = :sex
+            </#if>
+            <#if address?? && address != '' >
+                , address = :address
+            </#if>
+            <#if eduLevel?? && eduLevel != '' >
+                , edu_level = :eduLevel
+            </#if>
+            <#if postType?? && postType != '' >
+                , post_type = :postType
+            </#if>
+            <#if workType?? && workType != '' >
+                , work_type = :workType
+            </#if>
+            <#if phone?? && phone != '' >
+                , phone = :phone
+            </#if>
+            <#if constructionArea?? && constructionArea != '' >
+                , construction_area = :constructionArea
+            </#if>
+            <#if status?? && status != '' >
+                , status = :status
+            </#if>
+            <#if entranceTime?? && entranceTime != '' >
+                , entrance_time = :entranceTime
+            </#if>
+            <#if emergencyContact?? && emergencyContact != '' >
+                , emergency_contact = :emergencyContact
+            </#if>
+            <#if contractCode?? && contractCode != '' >
+                , contract_code = :contractCode
+            </#if>
+            <#if insuranceDetail?? && insuranceDetail != '' >
+                , insurance_detail = :insuranceDetail
+            </#if>
+            <#if buildSiteCode?? && insuranceDetail != '' >
+                , build_site_code = :insuranceDetail
+            </#if>
+            <#if finger1Base64?? && finger1Base64 != '' >
+                , finger1_base64 = :finger1Base64
+            </#if>
+            <#if leaderName?? && leaderName != '' >
+                , leader_name = :leaderName
+            </#if>
+            <#if leaveTime?? && leaveTime != '' >
+                , leave_time = :leaveTime
+            </#if>
+            <#if emergencyContactPhone?? && emergencyContactPhone != '' >
+                , emergency_contact_phone = :emergencyContactPhone
+            </#if>
+            <#if healthyStatus?? && healthyStatus != '' >
+                , healthy_status = :healthyStatus
+            </#if>
+            <#if maritalStatus?? && maritalStatus != '' >
+                , marital_status = :maritalStatus
+            </#if>
+            <#if password?? && password != '' >
+                , password = :password
+            </#if>
+        ]]>
+    </sqltemplate>
+    <!--修改学员管理-->
+    <sqltemplate id="updateSingleBuildLabourer">
+        <![CDATA[
+            update build_labourer
+            SET realname = :realname
+            <#if sex?? && sex != '' >
+                , sex = :sex
+            </#if>
+            <#if address?? && address != '' >
+                , address = :address
+            </#if>
+            <#if eduLevel?? && eduLevel != '' >
+                , edu_level = :eduLevel
+            </#if>
+            <#if postType?? && postType != '' >
+                , post_type = :postType
+            </#if>
+            <#if workType?? && workType != '' >
+                , work_type = :workType
+            </#if>
+            <#if phone?? && phone != '' >
+                , phone = :phone
+            </#if>
+            <#if constructionArea?? && constructionArea != '' >
+                , construction_area = :constructionArea
+            </#if>
+            <#if status?? && status != '' >
+                , status = :status
+            </#if>
+            <#if entranceTime?? && entranceTime != '' >
+                , entrance_time = :entranceTime
+            </#if>
+            <#if emergencyContact?? && emergencyContact != '' >
+                , emergency_contact = :emergencyContact
+            </#if>
+            <#if contractCode?? && contractCode != '' >
+                , contract_code = :contractCode
+            </#if>
+            <#if insuranceDetail?? && insuranceDetail != '' >
+                , insurance_detail = :insuranceDetail
+            </#if>
+            <#if buildSiteCode?? && insuranceDetail != '' >
+                , build_site_code = :insuranceDetail
+            </#if>
+            <#if finger1Base64?? && finger1Base64 != '' >
+                , finger1_base64 = :finger1Base64
+            </#if>
+            <#if leaderName?? && leaderName != '' >
+                , leader_name = :leaderName
+            </#if>
+            <#if leaveTime?? && leaveTime != '' >
+                , leave_time = :leaveTime
+            </#if>
+            <#if emergencyContactPhone?? && emergencyContactPhone != '' >
+                , emergency_contact_phone = :emergencyContactPhone
+            </#if>
+            <#if healthyStatus?? && healthyStatus != '' >
+                , healthy_status = :healthyStatus
+            </#if>
+            <#if maritalStatus?? && maritalStatus != '' >
+                , marital_status = :maritalStatus
+            </#if>
+            WHERE id = :id
+        ]]>
+    </sqltemplate>
+
+    <sqltemplate id = "queryLabourFingerBase64">
+        <![CDATA[
+              SELECT
+                    id,
+                    build_company_id,
+                    build_site_code,
+                    realname,
+                    id_card,
+                    sex,
+                    address,
+                    phone,
+                    password,
+                    openId,
+                    post_type,
+                    leader_name,
+                    leader_phone,
+                    cumulative_day,
+                    status,
+                    create_user_id,
+                    nation,
+                    birthday,
+                    Id_issued,
+                    issued_date,
+                    valid_date,
+                    base_64_photo,
+                    work_type,
+                    emergency_contact,
+                    emergency_contact_phone,
+                    healthy_status,
+                    marital_status,
+                    contract_code,
+                    insurance_detail,
+                    create_time,
+                    update_time,
+                    finger1_base64,
+                    finger2_base64,
+                    finger3_base64
+              FROM BUILD_LABOURER
+              WHERE STATUS = '1'
+        ]]>
+    </sqltemplate>
+    <!--根据id查询工人信息-->
+    <sqltemplate id="queryBuildLabourerById">
+        <![CDATA[
+        SELECT
+            bl.id,
+            bl.realname,
+            bl.sex,
+            bl.address,
+            bl.edu_level,
+            bl.post_type,
+            bl.work_type,
+            bl.phone,
+            bl.construction_area,
+            bl.`status`,
+            bl.entrance_time,
+            bl.emergency_contact,
+            bl.contract_code,
+            bl.insurance_detail,
+            bl.leader_name,
+            bl.leave_time,
+            bl.emergency_contact_phone,
+            bl.healthy_status,
+            bl.marital_status,
+            bl.base_64_photo base64Photo,
+            bl.id_card,
+            bs.site_name
+            FROM
+            build_labourer bl
+        LEFT JOIN build_site bs ON bl.build_site_code = bs.`code`
+        WHERE 1 = 1
+        <#if id?? && id != '' >
+            AND bl.id = :id
+        </#if>
+        ]]>
+
+    </sqltemplate>
+
+    <!--获取该学员的附件-->
+    <sqltemplate id="queryBuildLabourerAttachmentById">
+        <![CDATA[
+        SELECT
+            bl.realname,
+            ba.attachment_name,
+            ba.attachment_type,
+            ba.attachment_code,
+            ba.attachment_path
+        FROM
+        build_labourer bl
+        LEFT JOIN build_site bs ON bl.build_site_code = bs.`code`
+        LEFT JOIN build_attachment ba ON ba.foreign_id = bl.id
+        WHERE 1 = 1 AND source = 2
+        <#if id?? && id != '' >
+        AND bl.id = :id
+        </#if>
+        ]]>
+    </sqltemplate>
+
+    <!--根据方案id查询已经参加考试的人员-->
+    <sqltemplate id="queryExamLabourRel">
+        <![CDATA[
+            SELECT
+                r.id,
+                r.labourer_id,
+                r.exam_id,
+                r.exam_id,
+                t.train_program_id
+            FROM
+                edu_examlabour_rel r
+                LEFT JOIN edu_exam_train t ON r.exam_id = t.id
+            WHERE
+                t.train_program_id = :programId
+                AND r.exam_type = 3
+        ]]>
+    </sqltemplate>
+
+    <!--培训系统PC端 - 根据id查询大于该id的本地人员-->
+    <sqltemplate id="queryNextLabourByPreviousId">
+        <![CDATA[
+            SELECT * FROM build_labourer WHERE id > :id order by id limit 1
+        ]]>
+    </sqltemplate>
+
+</sqls>

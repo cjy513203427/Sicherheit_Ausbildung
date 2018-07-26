@@ -1,0 +1,473 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="video">
+    <!-- ====================================== sql======================================= -->
+    <!-- 根据集锦id查询视频信息 -->
+    <sqltemplate id="queryVideoByEduVideoId">
+        <![CDATA[
+             select
+			    ev.id,
+                ev.title,
+                ev.for_people,
+                ev.introduction,
+                ev.content_classify,
+                ev.post_type,
+                ev.thumbnail_path,
+                ev.click_number,
+                ev.create_user_id,
+                DATE_FORMAT(ev.create_time,'%Y-%m-%d %H:%i:%s') createTime,
+                DATE_FORMAT(ev.UPDATE_TIME,'%Y-%m-%d %H:%i:%s') updateTime,
+                FORMAT(IFNULL((SELECT AVG(score) FROM edu_video_comment WHERE edu_video_id = ev.id),5),2) average,
+			    ec.id collectId
+            FROM
+                edu_video ev
+                LEFT JOIN edu_collection ec ON ev.id = ec.reference_id AND ec.collection_type = 1
+                <#if labourId?? && labourId != '' >
+                    AND ec.labour_id = :labourId
+			    </#if>
+            where ev.id = :id
+		]]>
+    </sqltemplate>
+
+    <!--查询集锦列表（或有条件）-->
+    <sqltemplate id="queryVideoList">
+        <![CDATA[
+			 SELECT
+                ev.id,
+                ev.title,
+                ev.for_people,
+                ev.introduction,
+                ev.content_classify,
+                ev.post_type,
+                ev.thumbnail_path,
+                ev.click_number,
+                ev.create_user_id,
+                u.realname createUserName,
+                DATE_FORMAT(ev.create_time,'%Y-%m-%d %H:%i:%s') createTime,
+                DATE_FORMAT(ev.UPDATE_TIME,'%Y-%m-%d %H:%i:%s') updateTime
+            FROM
+                edu_video ev LEFT JOIN ct_user u ON ev.create_user_id = u.id
+            where 1=1
+            <#if title?? && title != '' >
+				AND TITLE LIKE CONCAT('%',:title,'%')
+			 </#if>
+            <#if createUserName?? && createUserName!= '' >
+                and u.realname LIKE CONCAT('%',:createUserName,'%')
+            </#if>
+            <#if pageOffset?? && pageSize!= '' >
+                LIMIT :pageOffset,:pageSize
+            </#if>
+		]]>
+    </sqltemplate>
+
+    <!--移动端查询集锦列表（或有条件）-->
+    <sqltemplate id="videoCollectionInfo">
+        <![CDATA[
+			SELECT
+                ev.id,
+                ev.title,
+                ev.for_people,
+                ev.introduction,
+                ev.content_classify,
+                ev.post_type,
+                ev.thumbnail_path,
+                IFNULL(ev.click_number,0) clickNumber,
+                ev.create_user_id,
+                DATE_FORMAT(ev.create_time,'%Y-%m-%d %H:%i:%s') createTime ,
+                DATE_FORMAT(ev.update_time,'%Y-%m-%d %H:%i:%s') updateTime ,
+                IFNULL((SELECT AVG(score) FROM edu_video_comment WHERE edu_video_id = ev.id),5) average
+            FROM
+                edu_video ev
+            WHERE
+                ev.thumbnail_path IS NOT NULL
+                and post_type = :postType
+                ORDER BY
+            <#if clickNumber?? && clickNumber != '' >
+                ev.click_number desc,
+			</#if>
+			    ev.create_time desc
+		]]>
+    </sqltemplate>
+
+    <!--查询视频总数（或有条件）-->
+    <sqltemplate id="countVideo">
+        <![CDATA[
+			 SELECT
+			 	COUNT(ev.ID)
+			 FROM edu_video ev LEFT JOIN ct_user u ON ev.create_user_id = u.id
+			where 1=1
+             <#if title?? && title != '' >
+				AND TITLE  LIKE CONCAT('%',:title,'%')
+			 </#if>
+            <#if createUserName?? && createUserName!= '' >
+                and u.realname LIKE CONCAT('%',:createUserName,'%')
+            </#if>
+		]]>
+    </sqltemplate>
+
+    <!--添加视频信息-->
+    <sqltemplate id="addVideoInfo">
+        <![CDATA[
+			 INSERT INTO  edu_video
+			 SET
+			    UPDATE_TIME = CURRENT_TIMESTAMP
+			    <#if title?? && title != ''>
+			        ,title = :title
+			    </#if>
+			    <#if forPeople?? && forPeople != ''>
+			        ,for_people = :forPeople
+			    </#if>
+			    <#if introduction?? && introduction != ''>
+			        ,introduction = :introduction
+			    </#if>
+			    <#if postType?? && postType != ''>
+			        ,post_type = :postType
+			    </#if>
+			    <#if thumbnailPath?? && thumbnailPath != ''>
+			        ,thumbnail_path = :thumbnailPath
+			    </#if>
+			    <#if clickNumber?? && clickNumber != ''>
+			        ,click_number = :clickNumber
+			    </#if>
+			    <#if createUserId?? && createUserId != ''>
+			        ,create_user_id = :createUserId
+			    </#if>
+		]]>
+    </sqltemplate>
+
+    <!--更新视频集锦信息-->
+    <sqltemplate id="updateVideoInfo">
+        <![CDATA[
+			 UPDATE  edu_video
+			 SET
+			 <#if title?? && title != '' >
+					title = :title ,
+			 </#if>
+
+			 <#if forPeople?? && forPeople != '' >
+					for_people = :forPeople,
+			 </#if>
+
+			 <#if introduction?? && introduction != '' >
+					introduction = :introduction,
+			 </#if>
+
+			 <#if postType?? && postType != '' >
+					post_type = :postType,
+			 </#if>
+
+			 <#if thumbnailPath?? && thumbnailPath != '' >
+					thumbnail_path = :thumbnailPath,
+			 </#if>
+
+			 <#if clickNumber?? && clickNumber != '' >
+					click_number = :clickNumber,
+			 </#if>
+					UPDATE_TIME = current_timestamp
+			 WHERE ID = :id
+		]]>
+    </sqltemplate>
+
+    <!--更新集锦热度-->
+    <sqltemplate id="updateCollectionHeatByCollectionId">
+        <![CDATA[
+			UPDATE edu_video
+            SET UPDATE_TIME = CURRENT_TIMESTAMP,
+             click_number = CASE
+            WHEN click_number IS NULL THEN
+                1
+            ELSE
+                click_number + 1
+            END
+            WHERE
+                id = :collectionId
+		]]>
+    </sqltemplate>
+
+    <!--添加用户评论-->
+    <sqltemplate id="addComments">
+        <![CDATA[
+			 INSERT INTO  edu_video_comment
+			 SET
+			        edu_video_id = :eduVideoId
+
+			        ,comment = :comment
+
+			        ,score = :score
+
+			        ,create_id = :createId
+
+			        ,creator_name = :createUserName
+
+		]]>
+    </sqltemplate>
+
+    <!--根据集锦id查询集锦评论-->
+    <sqltemplate id="queryCommentsByCollectionId">
+        <![CDATA[
+			SELECT
+                id,
+                edu_video_id,
+                `comment`,
+                score,
+                create_id,
+                DATE_FORMAT(CREATE_TIME,'%Y-%m-%d %H:%i:%s') createTime ,
+                (CASE
+                    WHEN creator_name IS NULL THEN
+                        (
+                            SELECT
+                                realname
+                            FROM
+                                build_labourer
+                            WHERE
+                                id = evc.create_id
+                        )
+                    ELSE
+                        creator_name
+                  END) createUserName
+            FROM
+                edu_video_comment evc
+            where edu_video_id = :eduVideoId
+            ORDER BY create_time DESC
+            limit :pageOffset, :pageSize
+		]]>
+    </sqltemplate>
+
+    <!--根据评论id查询评论-->
+    <sqltemplate id="queryCommentsByCommentId">
+        <![CDATA[
+			SELECT
+                id,
+                edu_video_id,
+                `comment`,
+                score,
+                create_id,
+                DATE_FORMAT(CREATE_TIME,'%Y-%m-%d %H:%i:%s') createTime ,
+                (CASE
+                    WHEN creator_name IS NULL THEN
+                        (
+                            SELECT
+                                realname
+                            FROM
+                                build_labourer
+                            WHERE
+                                id = evc.create_id
+                        )
+                    ELSE
+                        creator_name
+                  END) createUserName
+            FROM
+                edu_video_comment evc
+            where id = :id
+		]]>
+    </sqltemplate>
+
+    <!--分页查询收藏-->
+    <sqltemplate id="queryCollectVideoBy">
+        <![CDATA[
+			SELECT
+                ev.id,
+                ev.title,
+                ev.for_people,
+                ev.introduction,
+                ev.content_classify,
+                ev.post_type,
+                ev.thumbnail_path,
+                IFNULL(ev.click_number,0) clickNumber,
+                ev.create_user_id,
+                DATE_FORMAT(ev.create_time,'%Y-%m-%d %H:%i:%s') createTime ,
+                DATE_FORMAT(ev.update_time,'%Y-%m-%d %H:%i:%s') updateTime ,
+                ROUND( IFNULL((SELECT AVG(score) FROM edu_video_comment WHERE edu_video_id = ev.id),5),2) average
+            FROM EDU_VIDEO EV
+            Inner join  edu_collection co
+            on  ev.id = co.reference_id
+            and co.collection_type = :collectionType
+            and co.labour_id = :labourId
+
+            order by ev.id desc
+
+		]]>
+    </sqltemplate>
+
+
+    <!--分页查询学习积累-->
+    <sqltemplate id="queryStudyReorcdBy">
+        <![CDATA[
+			SELECT
+                distinct ev.id,
+                ev.title,
+                ev.for_people,
+                ev.introduction,
+                ev.content_classify,
+                ev.post_type,
+                ev.thumbnail_path,
+                IFNULL(ev.click_number,0) clickNumber,
+                ev.create_user_id,
+                DATE_FORMAT(ev.create_time,'%Y-%m-%d %H:%i:%s') createTime ,
+                DATE_FORMAT(ev.update_time,'%Y-%m-%d %H:%i:%s') updateTime ,
+                IFNULL((SELECT AVG(score) FROM edu_video_comment WHERE edu_video_id = ev.id),5) average
+            FROM EDU_VIDEO EV
+            Inner join  edu_videolabour_rel vlr
+            on  ev.id = vlr.video_id
+            and vlr.labour_id = :labourId
+            order by ev.id desc
+		]]>
+    </sqltemplate>
+
+
+    <!--根据集锦id查询集锦信息-->
+    <sqltemplate id="queryVideoListByVideoCollectionId">
+        <![CDATA[
+            SELECT
+                id,
+                title,
+                for_people,
+                introduction,
+                content_classify,
+                post_type,
+                thumbnail_path
+            FROM
+                EDU_VIDEO
+            WHERE
+                id IN (${ids})
+		]]>
+    </sqltemplate>
+
+    <!--根据集锦id查询视频内容-->
+    <sqltemplate id="queryContentByVideoMaterialId">
+        <![CDATA[
+            SELECT
+                id,
+                edu_video_id,
+                video_chapter_id,
+                video_path
+            FROM
+                edu_chapter_content
+            WHERE
+                edu_video_id IN (${ids})
+		]]>
+    </sqltemplate>
+
+    <!--删除视频内容-->
+    <sqltemplate id="deleteVideoContent">
+        <![CDATA[
+            DELETE
+            FROM
+                edu_chapter_content
+            WHERE
+                edu_video_id IN (${ids})
+		]]>
+    </sqltemplate>
+
+    <!--删除章节-->
+    <sqltemplate id="deleteVideoChapter">
+        <![CDATA[
+            DELETE
+            FROM
+                edu_video_chapter
+            WHERE
+                edu_video_id IN (${ids})
+		]]>
+    </sqltemplate>
+
+    <!--删除视频集锦-->
+    <sqltemplate id="deleteVideoMaterial">
+        <![CDATA[
+            DELETE
+            FROM
+                edu_video
+            WHERE
+                id IN (${ids})
+		]]>
+    </sqltemplate>
+
+    <!--培训系统PC端 获取全部视频集锦-->
+    <sqltemplate id="queryAllCourses">
+        <![CDATA[
+			 SELECT
+                id,
+                title
+            FROM
+                edu_video
+		]]>
+    </sqltemplate>
+
+    <!--培训系统PC端 根据方案ID查询视频集锦-->
+    <sqltemplate id="queryMaterialByProgramId">
+        <![CDATA[
+			 SELECT
+                v.id,
+                v.title,
+                v.for_people,
+                v.introduction,
+                v.content_classify,
+                v.post_type,
+                v.thumbnail_path,
+                v.click_number,
+                v.create_user_id,
+                DATE_FORMAT(v.create_time,'%Y-%m-%d %H:%i:%s') createTime ,
+                DATE_FORMAT(v.update_time,'%Y-%m-%d %H:%i:%s') updateTime
+            FROM
+                edu_video v
+            LEFT JOIN edu_train_lesson_rel l ON l.video_id = v.id
+            WHERE
+                l.train_program_id = :programId
+		]]>
+    </sqltemplate>
+
+
+    <sqltemplate id="queryVideoById">
+        <![CDATA[
+			  SELECT
+			            id,
+                        title,
+                        for_people,
+                        introduction,
+                        content_classify,
+                        post_type,
+                        thumbnail_path,
+                        click_number,
+                        create_user_id,
+                        create_time,
+                        update_time
+
+	          FROM  edu_video
+	          where id = :id
+	          order by id
+	          limit 1
+		]]>
+    </sqltemplate>
+
+    <!--培训系统PC版 - 查询视频集锦(即视频目录)-->
+   <sqltemplate id="queryVideoCatalog">
+        <![CDATA[
+			 SELECT * FROM edu_video
+		]]>
+    </sqltemplate>
+
+
+    queryVideoByTitle
+
+    <sqltemplate id="queryVideoByTitle">
+        <![CDATA[
+			  SELECT
+			            id,
+                        title,
+                        for_people,
+                        introduction,
+                        content_classify,
+                        post_type,
+                        thumbnail_path,
+                        click_number,
+                        create_user_id,
+                        create_time,
+                        update_time
+
+	          FROM  edu_video
+	          where title = :title
+	          order by id
+	          limit 1
+		]]>
+    </sqltemplate>
+
+
+</sqls>

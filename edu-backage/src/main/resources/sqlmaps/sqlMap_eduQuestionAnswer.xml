@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="eduQuestionAnswer">
+    <sqltemplate id="queryEduQuestionAnswer">
+        <![CDATA[
+        SELECT
+            eqa.`id`,
+            eqa.`question_id`,
+            eqa.`option_code`,
+            eqa.`option_content`,
+            eqa.`correct_flag`,
+            eqa.`create_time`,
+            eq.title
+        FROM
+        edu_question_answer eqa
+        INNER JOIN edu_question eq ON eqa.question_id = eq.id
+        WHERE 1=1
+        <#if correctFlag?? && correctFlag!=''>
+            AND eqa.correct_flag = :correctFlag
+        </#if>
+        <#if questionId?? && questionId!=''>
+            AND eqa.question_id = :questionId
+        </#if>
+        ORDER BY eqa.`option_code` ASC
+        ]]>
+    </sqltemplate>
+
+    <sqltemplate id="countEduQuestionAnswer">
+        <![CDATA[
+			 SELECT
+                    COUNT(1)
+                FROM
+                    edu_question_answer
+                WHERE 1=1
+                <#if correctFlag?? && correctFlag!=''>
+                    AND correct_flag = :correctFlag
+                </#if>
+                <#if questionId?? && questionId!=''>
+                    AND question_id = :questionId
+                </#if>
+		]]>
+    </sqltemplate>
+
+    <sqltemplate id="modifyEduQuestionAnswer">
+        <![CDATA[
+            UPDATE edu_question_answer
+            SET
+                 option_code = :optionCode,
+                 option_content = :optionContent,
+                 correct_flag = :correctFlag
+            WHERE ID = :id
+        ]]>
+    </sqltemplate>
+
+    <sqltemplate id="addEduQuestionAnswer">
+        <![CDATA[
+            INSERT edu_question_answer
+            SET  question_id = :questionId,
+                 option_code = :optionCode,
+                 option_content = :optionContent,
+                 correct_flag = :correctFlag
+		]]>
+    </sqltemplate>
+
+    <sqltemplate id="deleteEduQuestionAnswer">
+        <![CDATA[
+            DELETE FROM edu_question_answer
+            WHERE ID = :id
+        ]]>
+    </sqltemplate>
+
+
+    <sqltemplate id="batchAddEduQuestionAnswer">
+        <![CDATA[
+            insert into safety_edu.edu_question_answer
+                (
+                question_id,
+                option_code,
+                option_content,
+                correct_flag
+                )
+                values
+                <#list questionAnswerList as answer>
+                     (
+                        '${answer.questionId}' ,
+                        '${answer.optionCode}' ,
+                        '${answer.optionContent}' ,
+                        '${answer.correctFlag}'
+                        )
+                <#if answer_has_next>,</#if>
+                </#list>
+
+
+		]]>
+    </sqltemplate>
+
+</sqls>

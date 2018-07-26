@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="dataStatistics">
+    <!--培训系统PC版-查询数据统计-->
+    <sqlTemplate id="queryDataStatistics">
+        <![CDATA[
+            SELECT
+                T1.site_name,
+                (SELECT count(T2.id) FROM build_labourer T2 WHERE T2.build_site_code = T1.`code` AND T2.`status` = :status) labourerCount,
+                (SELECT count(T2.id) FROM build_labourer T2 WHERE T2.build_site_code = T1.`code`) totalCount,
+                T1.`code`
+            FROM
+                build_site T1
+            WHERE
+                T1.company_id = :companyId
+        ]]>
+    </sqlTemplate>
+
+    <!--培训系统PC版-查询总学时和培训人次-->
+    <sqlTemplate id="queryTimeAndTrain">
+        <![CDATA[
+            SELECT
+            (
+                SELECT
+                    sum(T3.time_length)
+                FROM
+                    edu_train_program T1
+                INNER JOIN edu_train_lesson_rel T2 ON T2.train_program_id = T1.id
+                INNER JOIN edu_chapter_content T3 ON edu_video_id = T2.video_id
+                WHERE
+                    T1.company_id = :companyId
+            ) totalTime,
+            (
+                SELECT
+                    count(T2.id)
+                FROM
+                    build_labourer T1
+                INNER JOIN edu_examlabour_rel T2 ON T2.labourer_id = T1.id
+                WHERE
+                    T1.build_site_code = :siteCode
+                AND T2.exam_type = :examType
+            ) trainLabourerCount
+        FROM DUAL
+        ]]>
+    </sqlTemplate>
+</sqls>

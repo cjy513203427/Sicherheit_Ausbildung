@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--  sql 的命名空间  -->
+<sqls namespace="customer">
+
+
+<!-- ======================================  sql   ======================================= -->
+
+	<!-- 查询客户信息 -->
+	<sqltemplate id="queryCustomerById">
+		<![CDATA[
+					SELECT
+							ID,
+							CUSTOMER_NAME,
+							OPEN_ID,
+							LEVEL,
+							TELEPHONE,
+							COMPANY_NAME,
+							STATUS,
+							UNIFIED_CREDIT_CODE,
+							COMPANY_ADDRESS,
+							DATE_FORMAT(CREATE_TIME,'%Y-%m-%d %H:%i:%s')   createTime,
+							DATE_FORMAT(UPDATE_TIME,'%Y-%m-%d %H:%i:%s')   updateTime ,
+							CREATE_USER_ID
+					FROM CUSTOMER
+					WHERE ID = :id
+		]]>
+	</sqltemplate>
+
+
+	<sqltemplate id="queryCustomerList">
+		<![CDATA[
+					SELECT
+							ID,
+							CUSTOMER_NAME,
+							OPEN_ID,
+							LEVEL,
+							TELEPHONE,
+							COMPANY_NAME,
+							STATUS,
+							REMARK,
+							CUSTOMER_SOURCE,
+							CHANNEL_TYPE ,
+							PROVINCE,
+							CITY,
+							UNIFIED_CREDIT_CODE,
+							COMPANY_ADDRESS,
+							DATE_FORMAT(CREATE_TIME,'%Y-%m-%d %H:%i:%s')   createTime,
+							DATE_FORMAT(UPDATE_TIME,'%Y-%m-%d %H:%i:%s')   updateTime ,
+							CREATE_USER_ID ,
+							(SELECT REALNAME FROM CT_USER WHERE ID =  CREATE_USER_ID ) createUserName
+					FROM CUSTOMER
+					WHERE 1=1
+					<#if customerName?? && customerName != '' >
+						AND CUSTOMER_NAME LIKE CONCAT('%',:customerName,'%')
+					</#if>
+					<#if createCustomerStart?? && createCustomerStart != '' >
+						AND CREATE_TIME >= CONCAT(:createCustomerStart,' 00:00:00')
+					</#if>
+					<#if createCustomerEnd?? && createCustomerEnd != '' >
+						AND CREATE_TIME <= CONCAT(:createCustomerEnd,' 23:59:59')
+					</#if>
+					<#if telephone?? && telephone != '' >
+						AND TELEPHONE LIKE CONCAT(:telephone,'%')
+					</#if>
+					<#if createUserId?? && createUserId != '' >
+						AND CREATE_USER_ID = :createUserId
+					</#if>
+
+					<#if superParam?? && superParam != '' >
+						AND(
+						CUSTOMER_NAME LIKE CONCAT('%',:superParam,'%')
+						OR  TELEPHONE = :superParam
+						)
+					</#if>
+
+					ORDER BY  ID DESC
+					LIMIT :pageOffset , :pageSize
+		]]>
+	</sqltemplate>
+
+	<sqltemplate id="countCustomer">
+		<![CDATA[
+					SELECT
+							COUNT(ID)
+					FROM CUSTOMER
+					WHERE 1=1
+					<#if customerName?? && customerName != '' >
+						AND CUSTOMER_NAME LIKE CONCAT('%',:customerName,'%')
+					</#if>
+					<#if createCustomerStart?? && createCustomerStart != '' >
+						AND CREATE_TIME >= CONCAT(:createCustomerStart,' 00:00:00')
+					</#if>
+					<#if createCustomerEnd?? && createCustomerEnd != '' >
+						AND CREATE_TIME <= CONCAT(:createCustomerEnd,' 23:59:59')
+					</#if>
+					<#if telephone?? && telephone != '' >
+						AND TELEPHONE LIKE CONCAT(:telephone,'%')
+					</#if>
+					<#if createUserId?? && createUserId != '' >
+						AND CREATE_USER_ID = :createUserId
+					</#if>
+					<#if superParam?? && superParam != '' >
+						AND(
+						CUSTOMER_NAME LIKE CONCAT('%',:superParam,'%')
+						OR  TELEPHONE = :superParam
+						)
+					</#if>
+		]]>
+	</sqltemplate>
+
+	<sqltemplate id="selectExistCustomerByPhoneNumber">
+		<![CDATA[
+					SELECT COUNT(ID)
+					FROM CUSTOMER
+					WHERE TELEPHONE = :phoneNumber
+		]]>
+	</sqltemplate>
+
+	<sqltemplate id="selectCustomerByPhoneNumber">
+		<![CDATA[
+					SELECT
+							ID,
+							CUSTOMER_NAME,
+							OPEN_ID,
+							LEVEL,
+							TELEPHONE,
+							COMPANY_NAME,
+							UNIFIED_CREDIT_CODE,
+							COMPANY_ADDRESS,
+							STATUS,
+							DATE_FORMAT(CREATE_TIME,'%Y-%m-%d %H:%i:%s')   createTime,
+							DATE_FORMAT(UPDATE_TIME,'%Y-%m-%d %H:%i:%s')   updateTime ,
+							CREATE_USER_ID
+					FROM CUSTOMER
+					WHERE TELEPHONE = :phoneNumber
+					ORDER BY ID DESC
+					LIMIT 0,1
+		]]>
+	</sqltemplate>
+
+	<sqltemplate id="queryCustomerByOpenId">
+		<![CDATA[
+					SELECT
+							ID,
+							CUSTOMER_NAME,
+							OPEN_ID,
+							LEVEL,
+							TELEPHONE,
+							COMPANY_NAME,
+							UNIFIED_CREDIT_CODE,
+							COMPANY_ADDRESS,
+							STATUS,
+							DATE_FORMAT(CREATE_TIME,'%Y-%m-%d %H:%i:%s')   createTime,
+							DATE_FORMAT(UPDATE_TIME,'%Y-%m-%d %H:%i:%s')   updateTime ,
+							CREATE_USER_ID
+					FROM CUSTOMER
+					WHERE OPEN_ID = :openId
+					ORDER BY ID DESC
+					LIMIT 0,1
+		]]>
+	</sqltemplate>
+
+	<sqltemplate id="saveCustomer">
+		<![CDATA[
+					INSERT INTO CUSTOMER
+							SET
+								LEVEL = :level,
+								TELEPHONE = :telephone
+							<#if openId?? && openId != '' >
+									, OPEN_ID = :openId
+							</#if>
+
+							<#if customerName?? && customerName != '' >
+									, CUSTOMER_NAME = :customerName
+							</#if>
+
+							<#if companyName?? && companyName != '' >
+									, COMPANY_NAME =:companyName
+							</#if>
+							<#if unifiedCreditCode?? && unifiedCreditCode != '' >
+									, UNIFIED_CREDIT_CODE =:unifiedCreditCode
+							</#if>
+							<#if companyAddress?? && companyAddress != '' >
+									, COMPANY_ADDRESS =:companyAddress
+							</#if>
+
+							<#if createUserId?? && createUserId != '' >
+									, CREATE_USER_ID =:createUserId
+							</#if>
+
+							<#if customerSource?? && customerSource != '' >
+									, CUSTOMER_SOURCE =:customerSource
+							</#if>
+							<#if remark?? && remark != '' >
+									, remark =:remark
+							</#if>
+							<#if channelType?? && channelType != '' >
+									, channel_type =:channelType
+							</#if>
+							<#if province?? && province != '' >
+									, province =:province
+							</#if>
+							<#if city?? && city != '' >
+									, city =:city
+							</#if>
+							,status = 1
+
+		]]>
+	</sqltemplate>
+
+	<sqltemplate id="updateCustomer">
+		<![CDATA[
+					UPDATE CUSTOMER
+							SET
+							        UPDATE_TIME = current_timestamp
+							<#if openId?? && openId != '' >
+									, OPEN_ID = :openId
+							</#if>
+							<#if customerName?? && customerName != '' >
+									, CUSTOMER_NAME =:customerName
+							</#if>
+							<#if companyName?? && companyName != '' >
+									, COMPANY_NAME =:companyName
+							</#if>
+							<#if telephone?? && telephone != '' >
+									, TELEPHONE =:telephone
+							</#if>
+							<#if level?? && level != '' >
+									, LEVEL =:level
+							</#if>
+							<#if unifiedCreditCode?? && unifiedCreditCode != '' >
+									, UNIFIED_CREDIT_CODE =:unifiedCreditCode
+							</#if>
+							<#if companyAddress?? && companyAddress != '' >
+									, COMPANY_ADDRESS =:companyAddress
+							</#if>
+							<#if customerSource?? && customerSource != '' >
+									, CUSTOMER_SOURCE =:customerSource
+							</#if>
+							<#if remark?? && remark != '' >
+									, remark =:remark
+							</#if>
+							<#if channelType?? && channelType != '' >
+									, channel_type =:channelType
+							</#if>
+							<#if province?? && province != '' >
+									, province =:province
+							</#if>
+							<#if city?? && city != '' >
+									, city =:city
+							</#if>
+							WHERE ID = :id
+
+		]]>
+	</sqltemplate>
+
+	<sqltemplate id="queryCustomerByOrderId">
+		<![CDATA[
+
+					SELECT
+						T1.ID,
+						T1.CUSTOMER_NAME,
+						T1.OPEN_ID,
+						T1.LEVEL,
+						T1.TELEPHONE,
+						T1.COMPANY_NAME,
+						T1.UNIFIED_CREDIT_CODE,
+						T1.COMPANY_ADDRESS,
+						T1.CREATE_TIME,
+						T1.UPDATE_TIME,
+						T2.ORDER_NUMBER ,
+						T1.CREATE_USER_ID
+					FROM CUSTOMER T1,ORDERS T2
+					WHERE T1.ID =T2.CUSTOMER_ID
+					AND T2.ID = :orderId
+
+		]]>
+	</sqltemplate>
+
+	<sqltemplate id="changeCustomerStatusByCustomerId">
+		<![CDATA[
+			 UPDATE  CUSTOMER
+			 SET
+			 <#if state?? && state != '' >
+					STATUS = :state,
+			 </#if>
+					UPDATE_TIME = current_timestamp
+			 WHERE ID IN (${customerId})
+		]]>
+	</sqltemplate>
+
+
+
+    <sqltemplate id="assignCustomerSev">
+        <![CDATA[
+			 UPDATE  CUSTOMER
+			 SET
+					CREATE_USER_ID = :userId,
+					UPDATE_TIME = current_timestamp
+			 WHERE ID = :customerId
+		]]>
+    </sqltemplate>
+</sqls>

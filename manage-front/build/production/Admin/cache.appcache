@@ -1,0 +1,20 @@
+CACHE MANIFEST
+# 6845fd6205c4a314ba529a4c8949089983d90538
+index.html
+# d6250b1b07b05dd7e4e03e95fdf5a2ffc4692d78
+classic/app.js
+# 3f9e364ef6065fba8e7ea08acbb29059395b13c2
+classic/resources/Admin-all_1.css
+# ed37bc8205ddd537bd5be2c1eee5a0e1fe7fd5c4
+classic/resources/Admin-all_2.css
+# 2e0e6617bd9113426fc17960aa0694ab5f9f1f05
+classic/resources/Admin-all_3.css
+# 8e3ac0e5f1b53f64e36539023bada7eccb5a074a
+resources/images/lock-screen-background.jpg
+
+
+FALLBACK:
+
+
+NETWORK:
+*

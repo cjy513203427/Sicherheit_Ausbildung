@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="eduQuestionBank">
+    <sqltemplate id="queryEduQuestionBank">
+        <![CDATA[
+			 SELECT
+                    eqb.`id`,
+                    eqb.`title`,
+                    eqb.`post_type`,
+                    eqb.`create_user_id`,
+                    eqb.`create_time`,
+                    cu.`realname`
+                FROM
+                    edu_question_bank eqb
+                INNER JOIN ct_user cu
+                ON eqb.create_user_id = cu.id
+                WHERE 1=1
+                <#if title?? && title != '' >
+                    AND eqb.title LIKE CONCAT('%',:title,'%')
+                </#if>
+                <#if postType?? && postType != '' >
+                    AND eqb.post_type LIKE CONCAT('%',:postType,'%')
+                </#if>
+                    AND eqb.delete_status = 1
+                <#if pageOffset?? && pageSize?? >
+                LIMIT :pageOffset,:pageSize
+                </#if>
+		]]>
+    </sqltemplate>
+
+    <sqltemplate id="countEduQuestionBank">
+        <![CDATA[
+			 SELECT
+                    COUNT(1)
+                FROM
+                    edu_question_bank
+                WHERE 1=1
+                <#if title?? && title != '' >
+                    AND title LIKE CONCAT('%',:title,'%')
+                </#if>
+                <#if postType?? && postType != '' >
+                    AND post_type LIKE CONCAT('%',:postType,'%')
+                </#if>
+                    AND delete_status = 1
+		]]>
+    </sqltemplate>
+
+    <sqltemplate id="modifyEduQuestionBank">
+        <![CDATA[
+            UPDATE edu_question_bank
+             SET title = :title,
+                 post_type = :postType,
+                 create_user_id = :createUserId
+            WHERE ID = :id
+        ]]>
+    </sqltemplate>
+
+    <sqltemplate id="addEduQuestionBank">
+        <![CDATA[
+            INSERT edu_question_bank
+            SET title = :title,
+                post_type = :postType,
+                create_user_id = :createUserId
+		]]>
+    </sqltemplate>
+
+    <sqltemplate id="deleteEduQuestionBank">
+        <![CDATA[
+            UPDATE edu_question_bank
+             SET delete_status = 2
+            WHERE ID = :id
+        ]]>
+    </sqltemplate>
+</sqls>

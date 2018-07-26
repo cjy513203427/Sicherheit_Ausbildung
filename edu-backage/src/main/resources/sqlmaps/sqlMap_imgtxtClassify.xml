@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="imgtxtClassify">
+    <!-- ====================================== sql======================================= -->
+
+    <!--查询图文分类树信息-->
+    <sqltemplate id="queryTreeList">
+        <![CDATA[
+			SELECT
+                id,
+                classify_name text,
+                parent_id,
+                create_time,
+                (
+                    SELECT
+                        count(id)
+                    FROM
+                        edu_img_text
+                    WHERE
+                        content_classify = eic.id
+                ) contentAmount
+            FROM
+	            edu_imgtxt_classify eic
+		]]>
+    </sqltemplate>
+
+    <!--添加图文分类-->
+    <sqltemplate id="addClassify">
+        <![CDATA[
+			INSERT INTO
+			    edu_imgtxt_classify
+        	SET
+				<#if parentId?? && parentId != '' >
+					parent_id = :parentId ,
+				</#if>
+				classify_name =:text
+		]]>
+    </sqltemplate>
+
+    <!--更新图文分类-->
+    <sqltemplate id="updateClassify">
+        <![CDATA[
+			update edu_imgtxt_classify
+			set classify_name =:text
+			WHERE ID = :id
+		]]>
+    </sqltemplate>
+
+    <!--pc端删除分类-->
+    <sqltemplate id="deleteClassify">
+        <![CDATA[
+			delete from edu_imgtxt_classify WHERE ID = :id
+		]]>
+    </sqltemplate>
+
+    <!--查询热门分类-->
+    <sqltemplate id="queryHotClassify">
+        <![CDATA[
+			SELECT
+                SUM(IFNULL(eit.browse_times, 0)) browseTimes,
+                eit.content_classify,
+                eic.classify_name
+            FROM
+                edu_img_text eit
+            LEFT JOIN edu_imgtxt_classify eic ON eic.id = eit.content_classify
+            GROUP BY
+                eic.id
+            ORDER BY
+                browseTimes DESC
+		]]>
+    </sqltemplate>
+
+    <!--根据图文分类的id查询图文分类信息-->
+    <sqltemplate id="queryClassifyById">
+        <![CDATA[
+            SELECT
+                id,
+                classify_name,
+                parent_id,
+                create_time
+            FROM edu_imgtxt_classify WHERE id = :classifyId
+		]]>
+    </sqltemplate>
+
+    <!--根据ClassifyName查询是否存在-->
+    <sqltemplate id="isExistsToLocalByClassifyName">
+        <![CDATA[
+            SELECT count(id) FROM edu_imgtxt_classify WHERE classify_name = :classifyName
+		]]>
+    </sqltemplate>
+
+    <!--根据ClassifyName查询图文分类信息-->
+    <sqltemplate id="queryClassifyByNameToLocal">
+        <![CDATA[
+            SELECT
+                id,
+                classify_name,
+                parent_id,
+                create_time
+            FROM edu_imgtxt_classify WHERE classify_name = :classifyName
+		]]>
+    </sqltemplate>
+
+</sqls>

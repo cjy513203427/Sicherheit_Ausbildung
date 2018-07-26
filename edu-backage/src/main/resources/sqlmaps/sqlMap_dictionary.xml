@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqls namespace="dictionary">
+    <!-- ======================================  start ======================================= -->
+    <!-- 获取用户下的表 sql 语句 -->
+    <sqltemplate id="queryAll">
+        <![CDATA[
+			 SELECT 	ID,
+                        TYPE_DESC,
+                        TYPE_CODE,
+                        VALUE,
+                        TEXT,
+                        PARAM1,
+                        PARAM2
+                        FROM DICTIONARY
+		]]>
+    </sqltemplate>
+
+    <sqltemplate id="selectDictionaryCount">
+        <![CDATA[
+			 SELECT COUNT(id) FROM dictionary
+		]]>
+    </sqltemplate>
+
+    <sqltemplate id="selectDictionaryList">
+        <![CDATA[
+			  select
+			  id,
+			  type_desc,
+			  type_code,
+			  value,
+			  text,
+			  sort ,
+			  param1 ,
+              param2
+              from dictionary
+        WHERE 1=1
+        <#if typeDesc?? && typeDesc != '' >
+			AND type_desc LIKE CONCAT('%',:typeDesc,'%')
+	    </#if>
+	    <#if typeCode?? && typeCode != '' >
+			AND type_code LIKE CONCAT('%',:typeCode,'%')
+	    </#if>
+	    <#if value?? && value != '' >
+			AND value LIKE CONCAT('%',:value,'%')
+	    </#if>
+	    <#if text?? && text != '' >
+			AND text LIKE CONCAT('%',:text,'%')
+	    </#if>
+	    ORDER BY id desc,sort asc
+	    LIMIT :pageOffset , :pageSize
+		]]>
+    </sqltemplate>
+
+    <sqltemplate id="selectDictionaryListByType">
+        <![CDATA[
+			 select
+			  id,
+			  type_desc,
+			  type_code,
+			  value,
+			  text,
+			  sort ,
+			  param1 ,
+              param2
+            from dictionary
+            WHERE TYPE_CODE = :typeCode
+            order by sort
+		]]>
+    </sqltemplate>
+
+    <sqltemplate id="queryDicInfoByCodeAndValue">
+        <![CDATA[
+			 SELECT
+                d.id,
+                d.text,
+                d.`value`,
+                d.param1,
+                d.param2,
+                d.sort,
+                d.type_code,
+                d.type_desc,
+                u.id operatorId,
+                DATE_ADD(NOW(),INTERVAL d.param1 HOUR) expectCompleteTime,
+                u.realname
+            FROM
+                dictionary d
+            LEFT JOIN ct_user u ON d.param1 = u.id
+            WHERE d.TYPE_CODE = :code and d.value = :value
+		]]>
+    </sqltemplate>
+
+    <!--添加字典-->
+    <sqltemplate id="addDictionary">
+        <![CDATA[
+            INSERT INTO DICTIONARY
+            SET TYPE_DESC = :typeDesc,
+                TYPE_CODE = :typeCode,
+                VALUE = :value,
+                TEXT = :text,
+                <#if param1?? && param1 != ''>
+                    PARAM1 = :param1,
+                </#if>
+                <#if param2?? && param2 != ''>
+                    PARAM2 = :param2,
+                </#if>
+                SORT = :sort
+		]]>
+    </sqltemplate>
+
+    <!--修改字典-->
+    <sqltemplate id="modifyDictionary">
+        <![CDATA[
+            UPDATE DICTIONARY
+            SET
+                <#if typeDesc?? && typeDesc != ''>
+                    TYPE_DESC = :typeDesc,
+                </#if>
+                <#if typeCode?? && typeCode != ''>
+                    TYPE_CODE = :typeCode,
+                </#if>
+                <#if text?? && text != ''>
+                    TEXT = :text,
+                </#if>
+                <#if value?? && value != ''>
+                    VALUE = :value,
+                </#if>
+                <#if param1?? && param1 != ''>
+                    param1 = :param1,
+                </#if>
+                <#if param2?? && param2 != ''>
+                    param2 = :param2,
+                </#if>
+
+                    SORT = :sort
+
+                 WHERE ID = :id
+
+		]]>
+    </sqltemplate>
+    <!-- ======================================  end ======================================= -->
+    <sqltemplate id="getProvinceList">
+        <![CDATA[
+			  select
+			  province_id id,
+			  province_name text
+              from province
+		]]>
+    </sqltemplate>
+
+    <sqltemplate id="getCityList">
+        <![CDATA[
+			 SELECT
+                city_id id,
+                city_name text
+
+            FROM
+                city
+            WHERE province_id =
+            (SELECT province_id FROM province where  province_name = :provinceText)
+		]]>
+    </sqltemplate>
+
+</sqls>
